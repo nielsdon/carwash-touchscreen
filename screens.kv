@@ -1,0 +1,158 @@
+#:set default_font_size "42sp"
+#:set heading_font_size "60sp"
+#:set text_color 0.15,0.45,0.73,1
+#:set button_background_color 0.21,0.69,0.94,1
+#:set button_text_color 1,1,1,1
+
+<ProgramSelectionHigh>:
+  canvas.before:
+    Rectangle:
+      pos: self.pos
+      size: self.size
+    Color:
+      rgba: 1,1,1,1
+  BoxLayout:
+    size: root.width, root.height
+    orientation: 'vertical'
+    Image:
+      source: 'logo.png'
+      size: self.texture_size
+      size_hint_y: 1.5
+    Button:
+      text: "Wasprogramma 4 (Bus)"
+      background_color : button_background_color
+      font_size: default_font_size
+      color: button_text_color
+      on_release:
+        root.selectProgram(4)
+<ProgramSelection>:
+  canvas.before:
+    Rectangle:
+      pos: self.pos
+      size: self.size
+    Color:
+      rgba: 1,1,1,1
+  BoxLayout:
+    size: root.width, root.height
+    orientation: 'vertical'
+    Image:
+      source: 'logo.png'
+      size: self.texture_size
+      size_hint_y: 1.5
+    Button:
+      text: "Wasprogramma 1"
+      background_color : button_background_color
+      font_size: default_font_size
+      color: button_text_color
+      on_release:
+        root.selectProgram(1)
+    Button:
+      text: "Wasprogramma 2"
+      background_color : button_background_color
+      font_size: default_font_size
+      color: button_text_color
+      on_release:
+        root.selectProgram(2)
+    Button:
+      text: "Wasprogramma 3"
+      background_color : button_background_color
+      font_size: default_font_size
+      color: button_text_color
+      on_release:
+        root.selectProgram(3)
+    Button:
+      text: "Wasprogramma 4 (Bus)"
+      background_color : button_background_color
+      font_size: default_font_size
+      color: button_text_color
+      on_release:
+        root.selectProgram(4)
+<Payment>:
+  canvas.before:
+    Rectangle:
+      pos: self.pos
+      size: self.size
+    Color:
+      rgba: 1,1,1,1
+  BoxLayout:
+    size: root.width, root.height
+    orientation: 'vertical'
+    Image:
+      source: 'logo.png'
+      size: self.texture_size
+      size_hint_y: 1.5
+    Label:
+      text: "Voltooi betaling\nop PIN terminal"
+      font_size: heading_font_size
+      color: text_color
+
+<PaymentSuccess>:
+  canvas.before:
+    Rectangle:
+      pos: self.pos
+      size: self.size
+    Color:
+      rgba: 1,1,1,1
+  BoxLayout:
+    size: root.width, root.height
+    orientation: 'vertical'
+    Image:
+      source: 'logo.png'
+      size: self.texture_size
+      size_hint_y: 1.5
+    Label:
+      text: "Betaling gelukt.\nWassen start."
+      font_size: default_font_size
+
+<PaymentFailed>:
+  BoxLayout:
+    orientation: 'vertical'
+    Label:
+      text: "Betaling niet gelukt!"
+      font_size: default_font_size
+    Button:
+      text: "Terug naar start"
+      background_color : 1, 0, 0, 1
+      font_size: default_font_size
+      on_release:
+        root.manager.current = 'program_selection'
+<InProgress>:
+  canvas.before:
+    Rectangle:
+      pos: self.pos
+      size: self.size
+    Color:
+      rgba: 1,1,1,1
+  BoxLayout:
+    size: root.width, root.height
+    orientation: 'vertical'
+    Image:
+      source: 'logo.png'
+      size: self.texture_size
+      size_hint_y: 1.5
+    Label:
+      text: "Bezig met wassen"
+      font_size: heading_font_size
+      color: text_color
+<Error>:
+  canvas.before:
+    Rectangle:
+      pos: self.pos
+      size: self.size
+    Color:
+      rgba: (1,0,0,1)
+  BoxLayout:
+    size: root.width, root.height
+    orientation: 'vertical'
+    Label:
+      text: "Storing"
+      font_size: heading_font_size
+      color: text_color
+    Label:
+      text: "Er is een storing opgetreden"
+      font_size: default_font_size
+      color: text_color
+    Label:
+      text: " "
+      font_size: default_font_size
+      color: text_color

@@ -3,6 +3,7 @@
 #:set text_color 0.15,0.45,0.73,1
 #:set button_background_color 0.21,0.69,0.94,1
 #:set button_text_color 1,1,1,1
+#:set background_color 1,1,1,1
 
 <ProgramSelectionHigh>:
   canvas.before:
@@ -31,7 +32,7 @@
       pos: self.pos
       size: self.size
     Color:
-      rgba: 1,1,1,1
+      rgba: background_color
   BoxLayout:
     size: root.width, root.height
     orientation: 'vertical'
@@ -73,7 +74,7 @@
       pos: self.pos
       size: self.size
     Color:
-      rgba: 1,1,1,1
+      rgba: background_color
   BoxLayout:
     size: root.width, root.height
     orientation: 'vertical'
@@ -86,43 +87,26 @@
       font_size: heading_font_size
       color: text_color
 
-<PaymentSuccess>:
+<PaymentFailed>:
   canvas.before:
     Rectangle:
       pos: self.pos
       size: self.size
     Color:
-      rgba: 1,1,1,1
-  BoxLayout:
-    size: root.width, root.height
-    orientation: 'vertical'
-    Image:
-      source: 'logo.png'
-      size: self.texture_size
-      size_hint_y: 1.5
-    Label:
-      text: "Betaling gelukt.\nWassen start."
-      font_size: default_font_size
-
-<PaymentFailed>:
+      rgba: background_color
   BoxLayout:
     orientation: 'vertical'
     Label:
       text: "Betaling niet gelukt!"
-      font_size: default_font_size
-    Button:
-      text: "Terug naar start"
-      background_color : 1, 0, 0, 1
-      font_size: default_font_size
-      on_release:
-        root.manager.current = 'program_selection'
+      font_size: heading_font_size
+      color: text_color
 <InProgress>:
   canvas.before:
     Rectangle:
       pos: self.pos
       size: self.size
     Color:
-      rgba: 1,1,1,1
+      rgba: background_color
   BoxLayout:
     size: root.width, root.height
     orientation: 'vertical'
@@ -153,6 +137,6 @@
       font_size: default_font_size
       color: text_color
     Label:
-      text: " "
+      text: "Neem contact op met 0612345678"
       font_size: default_font_size
       color: text_color

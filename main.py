@@ -5,6 +5,10 @@ from kivy.uix.screenmanager import (ScreenManager, Screen, NoTransition)
 from functools import partial
 from datetime import datetime
 from signal import pause
+from paynlsdk.api.client import APIAuthentication
+from paynlsdk.api.client import APIClient
+from paynlsdk.exceptions import *
+
 import os
 import time
 import configparser
@@ -24,6 +28,12 @@ BIT1LED = int(CONFIG.get('GPIO','BIT1LED'))
 BIT2LED = int(CONFIG.get('GPIO','BIT2LED'))
 BIT4LED = int(CONFIG.get('GPIO','BIT4LED'))
 BIT8LED = int(CONFIG.get('GPIO','BIT8LED'))
+
+#setup payment
+APIClient.print_debug = bool(CONFIG.GET('Payment','debug'))
+APIAuthentication.service_id = CONFIG.get('Payment','serviceId')
+APIAuthentication.api_token = CONFIG.get('Payment','apiToken')
+APIAuthentication.token_code = CONFIG.get('Payment','tokenCode')
 
 class ProgramSelection(Screen):
   def selectProgram(self,program):
@@ -88,7 +98,22 @@ class Carwash(App):
     self.sm.add_widget(InProgress(name="in_progress"))
     #setup leds
     self.setupIO()
-    self.testLeds()
+    #self.testLeds()
+
+    #test payment
+    try:
+      result = PaymentMethods.get_list()
+      for payment_method in result.values():
+        print('{id}: {name} ({visible_name})'.format(id=payment_method.id, name=payment_method.name,
+          visible_name=payment_method.visible_name))
+    except SchemaException as se:
+      print('SCHEMA ERROR:\n\t' + str(se))
+      print('\nSCHEMA ERRORS:\n\t' + str(se.errors))
+    except ErrorException as ee:
+      print('API ERROR:\n' + str(ee))
+    except Exception as e:
+      print('GENERIC EXCEPTION:\n' + str(e))
+    
     return self.sm
 
   def selectProgram(self,program):

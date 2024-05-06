@@ -4,6 +4,7 @@
 #:set button_background_color 0.21,0.69,0.94,1
 #:set button_text_color 1,1,1,1
 #:set background_color 1,1,1,1
+#:set error_color 1,0,0,1
 
 <ProgramSelectionHigh>:
   canvas.before:
@@ -40,6 +41,10 @@
       source: 'logo.png'
       size: self.texture_size
       size_hint_y: 1.5
+    Label:
+      text: " "
+      font_size: heading_font_size
+      color: text_color
     Button:
       text: "Wasprogramma 1"
       background_color : button_background_color
@@ -96,10 +101,13 @@
       rgba: background_color
   BoxLayout:
     orientation: 'vertical'
+    Image:
+      source: 'error.png'
+      size: self.texture_size
     Label:
       text: "Betaling niet gelukt!"
       font_size: heading_font_size
-      color: text_color
+      color: error_color
 <InProgress>:
   canvas.before:
     Rectangle:
@@ -128,15 +136,18 @@
   BoxLayout:
     size: root.width, root.height
     orientation: 'vertical'
+    Image:
+      source: 'error.png'
+      size: self.texture_size
     Label:
       text: "Storing"
       font_size: heading_font_size
-      color: text_color
+      color: error_color
     Label:
       text: "Er is een storing opgetreden"
       font_size: default_font_size
-      color: text_color
+      color: error_color
     Label:
       text: "Neem contact op met 0612345678"
       font_size: default_font_size
-      color: text_color
+      color: error_color

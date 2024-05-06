@@ -2,12 +2,19 @@ from kivy.app import App
 from kivy.lang import Builder
 from kivy.clock import (mainthread, Clock)
 from kivy.uix.screenmanager import (ScreenManager, Screen, NoTransition)
+from kivy.logger import Logger
+
 from functools import partial
 from datetime import datetime
 from signal import pause
+
 from paynlsdk.api.client import APIAuthentication
 from paynlsdk.api.client import APIClient
+from paynlsdk.client.paymentmethods import PaymentMethods
+from paynlsdk.client.transaction import Transaction
 from paynlsdk.exceptions import *
+from paynlsdk.objects import OrderData, Address, Company, datetime, TransactionEndUser,\
+    TransactionStartStatsData, TransactionData, SalesData
 
 import os
 import time
@@ -15,7 +22,9 @@ import configparser
 import RPi.GPIO as GPIO
 import signal
 import sys
+import logging
 
+os.environ['KIVY_NO_FILELOG'] = '1'  # eliminate file log
 #globals
 CONFIG = configparser.ConfigParser()
 CONFIG.read('config.ini')
@@ -28,9 +37,26 @@ BIT1LED = int(CONFIG.get('GPIO','BIT1LED'))
 BIT2LED = int(CONFIG.get('GPIO','BIT2LED'))
 BIT4LED = int(CONFIG.get('GPIO','BIT4LED'))
 BIT8LED = int(CONFIG.get('GPIO','BIT8LED'))
+Logger.setLevel(int(CONFIG.get('General','logLevel')))
+logging.basicConfig(encoding='utf-8', level=int(CONFIG.get('General','logLevel')))
 
 #setup payment
-APIClient.print_debug = bool(CONFIG.GET('Payment','debug'))
+paymentTestMode = False
+APIClient.print_debug = False
+try:
+  if CONFIG.get('Payment','testMode'):
+    logging.debug('Payment test mode is ON')
+    paymentTestMode = True
+except:
+  logging.info('Payment test mode OFF')
+
+try:
+  if CONFIG.get('Payment','debug'):
+    logging.info('Payment debugging ON')
+    APIClient.print_debug = True
+except:
+  logging.info('Payment debugging OFF')
+
 APIAuthentication.service_id = CONFIG.get('Payment','serviceId')
 APIAuthentication.api_token = CONFIG.get('Payment','apiToken')
 APIAuthentication.token_code = CONFIG.get('Payment','tokenCode')
@@ -57,23 +83,77 @@ class Payment(Screen):
     app=App.get_running_app()
     #self.sm.current="payment_failed"
     prices = CONFIG.get('General','prices').split(',')
-    programPrice = float(prices[app.activeProgram]) + app.uptick
+
+    if paymentTestMode:
+      programPrice = 0.01
+    else:
+      programPrice = float(prices[app.activeProgram]) + app.uptick
+    
     print("Af te rekenen: " +str(programPrice))
-    print("Payter communicatie.....")
-    #als betaling is gelukt, start dan de machine
-    #if(payment_success):
-    #Clock.unschedule(event)
-    Clock.schedule_once(app.startMachine,3)
-#    event = Clock.schedule_once(partial(app.changeScreen, "in_progress"),3)
+    orderId = app.getOrderId()
+    
+    #pay.nl communicatie: start transaction
+    result = {}
+    try:
+      sinfo1 = {
+        'amount': int(programPrice*100),
+        'ip_address': '192.168.0.1',
+        'finish_url': 'https://192.168.0.1',
+        'payment_option_id': int(CONFIG.get('Payment','paymentOptionId')),
+        'transaction': TransactionData(
+          description='Wasprogramma ' +str(app.activeProgram),
+          order_number=str(orderId)),
+        'stats_data': TransactionStartStatsData(
+          extra1='IDX ' +str(orderId),
+          extra2='WP '+str(app.activeProgram)),
+        'test_mode': str(paymentTestMode)
+      }
+      #print(sinfo1)
+      result = Transaction.start(**sinfo1)
+      #print(result)
+      #print('Transaction ID: {id}\nPayment reference: {ref}\nPayment URL: {url}'.format(id=result.transaction.transaction_id, ref=result.get_payment_reference(), url=result.get_redirect_url()))
+    except SchemaException as se:
+      logging.error('SCHEMA ERROR:\n\t' + str(se))
+      print('\nSCHEMA ERRORS:\n\t' + str(se.errors))
+    except ErrorException as ee:
+      print('API ERROR:\n' + str(ee))
+    except Exception as e:
+      print('GENERIC EXCEPTION:\n' + str(e))
+
+    #pay.nl communicatie: check order status
+    orderStatus = 'PENDING'
+    wait = 0
+    while orderStatus == 'PENDING' and wait < 10:
+      try:
+        time.sleep(2)
+        statusResult = Transaction.status(transaction_id=result.transaction.transaction_id)
+        #print(statusResult)
+        orderStatus = statusResult.payment_details.state_name
+      except SchemaException as se:
+        print('SCHEMA ERROR:\n\t' + str(se))
+        print('\nSCHEMA ERRORS:\n\t' + str(se.errors))
+      except ErrorException as ee:
+        print('API ERROR:\n' + str(ee))
+      except Exception as e:
+        print('GENERIC EXCEPTION:\n' + str(e))
+      print('.')
+      time.sleep(2)
+      wait += 1
+    if(orderStatus == 'PAID'):
+      print('betaling gelukt!')
+      app.startMachine()
+    else:
+      print('fout bij betaling')
+      app.changeScreen('payment_failed')
 
 class InProgress(Screen):
   pass
 
 class PaymentFailed(Screen):
-  pass
-
-class PaymentSuccess(Screen):
-  pass
+  def on_enter(self):
+    print("=== Payment failed ===")
+    app=App.get_running_app()
+    Clock.schedule_once(partial(app.changeScreen, "program_selection"),5)
 
 class Error(Screen):
   pass
@@ -92,35 +172,18 @@ class Carwash(App):
     self.sm.add_widget(ProgramSelection(name="program_selection"))
     self.sm.add_widget(ProgramSelectionHigh(name="program_selection_high"))
     self.sm.add_widget(Payment(name="payment"))
-    self.sm.add_widget(PaymentSuccess(name="payment_success"))
     self.sm.add_widget(PaymentFailed(name="payment_failed"))
     self.sm.add_widget(Error(name="error"))
     self.sm.add_widget(InProgress(name="in_progress"))
     #setup leds
-    self.setupIO()
-    #self.testLeds()
-
-    #test payment
-    try:
-      result = PaymentMethods.get_list()
-      for payment_method in result.values():
-        print('{id}: {name} ({visible_name})'.format(id=payment_method.id, name=payment_method.name,
-          visible_name=payment_method.visible_name))
-    except SchemaException as se:
-      print('SCHEMA ERROR:\n\t' + str(se))
-      print('\nSCHEMA ERRORS:\n\t' + str(se.errors))
-    except ErrorException as ee:
-      print('API ERROR:\n' + str(ee))
-    except Exception as e:
-      print('GENERIC EXCEPTION:\n' + str(e))
-    
+    self.setupIO()  
     return self.sm
 
   def selectProgram(self,program):
     print("Program selected: " +str(program))
-    self.changeScreen("payment")
     self.activeProgram = program
-    Clock.schedule_once(partial(self.changeScreen, "payment"), 3)
+    self.changeScreen("payment")
+    #Clock.schedule_once(partial(self.changeScreen, "payment"), 3)
 
   def startMachine(self, dt):
     bin = '{0:04b}'.format(self.activeProgram)
@@ -146,6 +209,24 @@ class Carwash(App):
     uptick = CONFIG.get('General','mannedUptick')
     programs = CONFIG.get('General','prices')
     self.uptick = 0
+
+  def getOrderId(self):
+    orderId = 0
+    try:
+      file = open('orderId.txt', 'r+')
+      read = file.read()
+      print('orderId: ' +read)
+      if read:
+        orderId = int(read)
+      print('Gevonden order id: ' +str(orderId))
+      orderId += 1
+      file.seek(0)
+      file.write(str(orderId))
+      print('Nieuw order id: ' +str(orderId))
+    finally:
+      #file.truncate()
+      file.close()
+    return orderId
 
   def setupIO(self):
     GPIO.setmode(GPIO.BCM)
@@ -173,6 +254,10 @@ class Carwash(App):
     #high vehicle status changed
     GPIO.add_event_detect(HIGH_VEHICLE_INPUT, GPIO.BOTH, callback=self.highVehicleStatusChanged, bouncetime=300)
 
+  def changeScreen(self, screenName, *args):
+    print("Showing screen " +screenName)
+    self.sm.current=screenName
+    
   @mainthread
   def progressStatusChanged(self, *args):
     if GPIO.input(PROGRESS_INPUT):
@@ -200,7 +285,6 @@ class Carwash(App):
       #show error screen
       self.changeScreen("error")
 
-
   @mainthread
   def highVehicleStatusChanged(self, *args):
     if GPIO.input(HIGH_VEHICLE_INPUT):
@@ -211,30 +295,6 @@ class Carwash(App):
       print("High vehicle removed")
       #show normal program selection screen
       self.changeScreen("program_selection")
-    
-  def testLeds(self):
-    GPIO.output(BIT1LED,GPIO.HIGH)
-    time.sleep(0.5)
-    GPIO.output(BIT1LED,GPIO.LOW)
-    GPIO.output(BIT2LED,GPIO.HIGH)
-    time.sleep(0.5)
-    GPIO.output(BIT2LED,GPIO.LOW)
-    GPIO.output(BIT4LED,GPIO.HIGH)
-    time.sleep(0.5)
-    GPIO.output(BIT4LED,GPIO.LOW)
-    GPIO.output(BIT8LED,GPIO.HIGH)
-    time.sleep(0.5)
-    GPIO.output(BIT8LED,GPIO.LOW)
-    GPIO.output(ERROR_LED,GPIO.HIGH)    
-    time.sleep(0.5)
-    GPIO.output(ERROR_LED,GPIO.LOW)
-    GPIO.output(PROGRESS_LED,GPIO.HIGH)
-    time.sleep(0.5)
-    GPIO.output(PROGRESS_LED,GPIO.LOW)
-    
-  def changeScreen(self, screenName, *args):
-    print("Showing screen " +screenName)
-    self.sm.current=screenName
     
 def signal_handler(sig, frame):
     GPIO.cleanup()

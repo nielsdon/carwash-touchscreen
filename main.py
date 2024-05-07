@@ -7,11 +7,12 @@ from kivy.logger import Logger
 from functools import partial
 from datetime import datetime
 from signal import pause
+from requests.auth import HTTPBasicAuth
 
-from paynlsdk.api.client import APIAuthentication
-from paynlsdk.api.client import APIClient
+from paynlsdk.api.client import APIAuthentication, APIClient
 from paynlsdk.client.paymentmethods import PaymentMethods
 from paynlsdk.client.transaction import Transaction
+from paynlsdk.api.transaction.info import Request
 from paynlsdk.exceptions import *
 from paynlsdk.objects import OrderData, Address, Company, datetime, TransactionEndUser,\
     TransactionStartStatsData, TransactionData, SalesData
@@ -23,6 +24,7 @@ import RPi.GPIO as GPIO
 import signal
 import sys
 import logging
+import requests
 
 os.environ['KIVY_NO_FILELOG'] = '1'  # eliminate file log
 #globals
@@ -67,7 +69,7 @@ class ProgramSelection(Screen):
     app.selectProgram(program)
 
   def on_enter(self):
-    print("=== Program selection ===")
+    logging.debug("=== Program selection ===")
 
 class ProgramSelectionHigh(Screen):
   def selectProgram(self,program):
@@ -75,11 +77,11 @@ class ProgramSelectionHigh(Screen):
     app.selectProgram(program)
 
   def on_enter(self):
-    print("=== Program selection for high vehicles ===")
+    logging.debug("=== Program selection for high vehicles ===")
 
 class Payment(Screen):
   def on_enter(self):
-    print("=== Payment ===")
+    logging.debug("=== Payment ===")
     app=App.get_running_app()
     #self.sm.current="payment_failed"
     prices = CONFIG.get('General','prices').split(',')
@@ -89,8 +91,9 @@ class Payment(Screen):
     else:
       programPrice = float(prices[app.activeProgram]) + app.uptick
     
-    print("Af te rekenen: " +str(programPrice))
+    logging.debug("Af te rekenen: " +str(programPrice))
     orderId = app.getOrderId()
+    transactionId = ''
     
     #pay.nl communicatie: start transaction
     result = {}
@@ -110,48 +113,64 @@ class Payment(Screen):
       }
       #print(sinfo1)
       result = Transaction.start(**sinfo1)
+      transactionId = result.transaction.transaction_id
+      logging.debug('Transaction ID: ' +transactionId)
       #print(result)
       #print('Transaction ID: {id}\nPayment reference: {ref}\nPayment URL: {url}'.format(id=result.transaction.transaction_id, ref=result.get_payment_reference(), url=result.get_redirect_url()))
     except SchemaException as se:
       logging.error('SCHEMA ERROR:\n\t' + str(se))
-      print('\nSCHEMA ERRORS:\n\t' + str(se.errors))
     except ErrorException as ee:
-      print('API ERROR:\n' + str(ee))
+      logging.error('API ERROR:\n' + str(ee))
     except Exception as e:
-      print('GENERIC EXCEPTION:\n' + str(e))
+      logging.error('GENERIC EXCEPTION:\n' + str(e))
 
     #pay.nl communicatie: check order status
     orderStatus = 'PENDING'
     wait = 0
-    while orderStatus == 'PENDING' and wait < 10:
+    while orderStatus == 'PENDING' and wait < 10 and transactionId:
       try:
-        time.sleep(2)
-        statusResult = Transaction.status(transaction_id=result.transaction.transaction_id)
+        #time.sleep(2)
+        statusResult = Transaction.status(transaction_id=transactionId)
         #print(statusResult)
         orderStatus = statusResult.payment_details.state_name
       except SchemaException as se:
-        print('SCHEMA ERROR:\n\t' + str(se))
-        print('\nSCHEMA ERRORS:\n\t' + str(se.errors))
+        logging.error('SCHEMA ERROR:\n\t' + str(se))
+        logging.error('\nSCHEMA ERRORS:\n\t' + str(se.errors))
       except ErrorException as ee:
-        print('API ERROR:\n' + str(ee))
+        logging.error('API ERROR:\n' + str(ee))
       except Exception as e:
-        print('GENERIC EXCEPTION:\n' + str(e))
-      print('.')
+        logging.error('GENERIC EXCEPTION:\n' + str(e))
       time.sleep(2)
       wait += 1
     if(orderStatus == 'PAID'):
-      print('betaling gelukt!')
+      logging.info('betaling gelukt!')
       app.startMachine()
     else:
-      print('fout bij betaling')
+      logging.info('fout bij betaling')
+      self.cancelTransaction(transactionId)
       app.changeScreen('payment_failed')
-
+      
+  def cancelTransaction(self, transactionId):
+    try:
+      url = 'https://rest.pay.nl/v2/transactions/'+transactionId+'/cancel'
+      credentials = HTTPBasicAuth(CONFIG.get('Payment','tokenCode'),CONFIG.get('Payment','apiToken'))
+      headers = {
+        "accept": "application/json",
+        "content-type": "application/json",
+      }
+      response = requests.patch(url, headers=headers, auth=credentials)
+      logging.debug(response.text)
+    except requests.exceptions.RequestException as e:
+      logging.error('GENERIC EXCEPTION:\n' + str(e))
+    finally:
+      logging.debug('Cancelling transaction done')
+    
 class InProgress(Screen):
   pass
 
 class PaymentFailed(Screen):
   def on_enter(self):
-    print("=== Payment failed ===")
+    logging.debug("=== Payment failed ===")
     app=App.get_running_app()
     Clock.schedule_once(partial(app.changeScreen, "program_selection"),5)
 
@@ -180,14 +199,14 @@ class Carwash(App):
     return self.sm
 
   def selectProgram(self,program):
-    print("Program selected: " +str(program))
+    logging.debug("Program selected: " +str(program))
     self.activeProgram = program
     self.changeScreen("payment")
     #Clock.schedule_once(partial(self.changeScreen, "payment"), 3)
 
   def startMachine(self, dt):
     bin = '{0:04b}'.format(self.activeProgram)
-    print("Starting machine. Binary: " +str(bin))
+    logging.debug("Starting machine. Binary: " +str(bin))
     arr = list(bin)
     print(arr)
     if(int(arr[3])==1):
@@ -215,14 +234,14 @@ class Carwash(App):
     try:
       file = open('orderId.txt', 'r+')
       read = file.read()
-      print('orderId: ' +read)
+      logging.debug('orderId: ' +read)
       if read:
         orderId = int(read)
-      print('Gevonden order id: ' +str(orderId))
+      logging.debug('Gevonden order id: ' +str(orderId))
       orderId += 1
       file.seek(0)
       file.write(str(orderId))
-      print('Nieuw order id: ' +str(orderId))
+      logging.debug('Nieuw order id: ' +str(orderId))
     finally:
       #file.truncate()
       file.close()
@@ -255,17 +274,17 @@ class Carwash(App):
     GPIO.add_event_detect(HIGH_VEHICLE_INPUT, GPIO.BOTH, callback=self.highVehicleStatusChanged, bouncetime=300)
 
   def changeScreen(self, screenName, *args):
-    print("Showing screen " +screenName)
+    logging.debug("Showing screen " +screenName)
     self.sm.current=screenName
     
   @mainthread
   def progressStatusChanged(self, *args):
     if GPIO.input(PROGRESS_INPUT):
-      print("Machine in progress...")
+      logging.debug("Machine in progress...")
       GPIO.output(PROGRESS_LED,GPIO.HIGH)
       self.changeScreen("in_progress")
     else:
-      print("Machine done!")
+      logging.debug("Machine done!")
       GPIO.output(PROGRESS_LED,GPIO.LOW)
       #show program selection screen
       self.changeScreen("program_selection")
@@ -273,13 +292,13 @@ class Carwash(App):
   @mainthread
   def errorStatusChanged(self, *args):
     if GPIO.input(ERROR_INPUT):
-      print("Error resolved!")
+      logging.debug("Error resolved!")
       #switch on error led
       GPIO.output(ERROR_LED,GPIO.LOW)
       #show program selection screen
       self.changeScreen("program_selection")
     else:
-      print("Error detected!")
+      logging.debug("Error detected!")
       #switch on error led
       GPIO.output(ERROR_LED,GPIO.HIGH)
       #show error screen
@@ -288,11 +307,11 @@ class Carwash(App):
   @mainthread
   def highVehicleStatusChanged(self, *args):
     if GPIO.input(HIGH_VEHICLE_INPUT):
-      print("High vehicle detected!")
+      logging.debug("High vehicle detected!")
       #show program selection screen for high vehicles
       self.changeScreen("program_selection_high")
     else:
-      print("High vehicle removed")
+      logging.debug("High vehicle removed")
       #show normal program selection screen
       self.changeScreen("program_selection")
     

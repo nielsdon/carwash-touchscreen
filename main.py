@@ -7,15 +7,9 @@ from kivy.logger import Logger
 from functools import partial
 from datetime import datetime
 from signal import pause
-from requests.auth import HTTPBasicAuth
-
-from paynlsdk.api.client import APIAuthentication, APIClient
-from paynlsdk.client.paymentmethods import PaymentMethods
-from paynlsdk.client.transaction import Transaction
-from paynlsdk.api.transaction.info import Request
-from paynlsdk.exceptions import *
-from paynlsdk.objects import OrderData, Address, Company, datetime, TransactionEndUser,\
-    TransactionStartStatsData, TransactionData, SalesData
+from payNL import PayNL
+from washingOrder import Order
+from washcard import Washcard
 
 import os
 import time
@@ -25,11 +19,14 @@ import signal
 import sys
 import logging
 import requests
+import subprocess
+import locale
 
 os.environ['KIVY_NO_FILELOG'] = '1'  # eliminate file log
 #globals
 CONFIG = configparser.ConfigParser()
 CONFIG.read('config.ini')
+CARWASH_ID = int(CONFIG.get('General','carwashId'))
 ERROR_INPUT = int(CONFIG.get('GPIO','errorInput'))
 PROGRESS_INPUT = int(CONFIG.get('GPIO','progressInput'))
 PROGRESS_LED = int(CONFIG.get('GPIO','progressLED'))
@@ -41,129 +38,98 @@ BIT4LED = int(CONFIG.get('GPIO','BIT4LED'))
 BIT8LED = int(CONFIG.get('GPIO','BIT8LED'))
 Logger.setLevel(int(CONFIG.get('General','logLevel')))
 logging.basicConfig(encoding='utf-8', level=int(CONFIG.get('General','logLevel')))
-
-#setup payment
-paymentTestMode = False
-APIClient.print_debug = False
-try:
-  if CONFIG.get('Payment','testMode'):
-    logging.debug('Payment test mode is ON')
-    paymentTestMode = True
-except:
-  logging.info('Payment test mode OFF')
-
-try:
-  if CONFIG.get('Payment','debug'):
-    logging.info('Payment debugging ON')
-    APIClient.print_debug = True
-except:
-  logging.info('Payment debugging OFF')
-
-APIAuthentication.service_id = CONFIG.get('Payment','serviceId')
-APIAuthentication.api_token = CONFIG.get('Payment','apiToken')
-APIAuthentication.token_code = CONFIG.get('Payment','tokenCode')
+locale.setlocale(locale.LC_ALL, '')
 
 class ProgramSelection(Screen):
-  def selectProgram(self,program):
-    app=App.get_running_app()
-    app.selectProgram(program)
-
   def on_enter(self):
     logging.debug("=== Program selection ===")
 
-class ProgramSelectionHigh(Screen):
   def selectProgram(self,program):
     app=App.get_running_app()
     app.selectProgram(program)
 
+  def upgradeWashcard(self):
+    app=App.get_running_app()
+    app.changeScreen("upgrade_washcard_read_card")
+
+class ProgramSelectionHigh(Screen):
   def on_enter(self):
     logging.debug("=== Program selection for high vehicles ===")
 
+  def selectProgram(self,program):
+    app=App.get_running_app()
+    app.selectProgram(program)
+
+  def upgradeWashcard(self):
+    app=App.get_running_app()
+    app.changeScreen("upgrade_washcard_read_card")
+    
+class PaymentMethod(Screen):
+  def selectPin(self):
+    app=App.get_running_app()
+    app.changeScreen('payment')
+
+  def selectWashcard(self):
+    app=App.get_running_app()
+    app.changeScreen('payment_washcard')
+    
+class PaymentWashcard(Screen):
+  def on_enter(Screen):
+    logging.debug("=== Payment with washcard ===")
+    app=App.get_running_app()
+    washcard = Washcard()
+    washcard.readCard()
+    if(washcard.uid == ''):
+      app.changeScreen('payment_washcard_card_not_found')
+    elif(washcard.carwash == ''):
+      app.changeScreen('payment_washcard_card_not_valid')
+    elif(int(washcard.carwash.id) != int(CONFIG.get('General','carwashId'))):
+      logging.debug('Washcard carwash_id: ' +str(washcard.carwash.id))
+      logging.debug('Config carwash_id: ' +CONFIG.get('General','carwashId'))
+      screen = app.sm.get_screen('payment_washcard_wrong_carwash')
+      screen.ids.lbl_carwash.text = washcard.carwash.name +'\n' +washcard.carwash.city
+      app.changeScreen('payment_washcard_wrong_carwash')
+    else:  
+      responseCode = washcard.pay(app.activeOrder)
+      logging.debug('Response code: ' +str(responseCode))
+      if( responseCode == 0 ):
+        app.changeScreen('payment_success')
+      elif( responseCode == 1 ):
+        app.changeScreen('payment_washcard_insufficient_balance')
+      elif( responseCode == 2 ):
+        app.changeScreen('payment_washcard_card_not_found')
+      elif( responseCode == 3 ):
+        app.changeScreen('payment_washcard_card_not_valid')
+      else:
+        app.changeScreen('payment_failed')
+      
 class Payment(Screen):
   def on_enter(self):
     logging.debug("=== Payment ===")
     app=App.get_running_app()
-    #self.sm.current="payment_failed"
-    prices = CONFIG.get('General','prices').split(',')
-
-    if paymentTestMode:
-      programPrice = 0.01
-    else:
-      programPrice = float(prices[app.activeProgram]) + app.uptick
-    
-    logging.debug("Af te rekenen: " +str(programPrice))
-    orderId = app.getOrderId()
-    transactionId = ''
     
     #pay.nl communicatie: start transaction
-    result = {}
-    try:
-      sinfo1 = {
-        'amount': int(programPrice*100),
-        'ip_address': '192.168.0.1',
-        'finish_url': 'https://192.168.0.1',
-        'payment_option_id': int(CONFIG.get('Payment','paymentOptionId')),
-        'transaction': TransactionData(
-          description='Wasprogramma ' +str(app.activeProgram),
-          order_number=str(orderId)),
-        'stats_data': TransactionStartStatsData(
-          extra1='IDX ' +str(orderId),
-          extra2='WP '+str(app.activeProgram)),
-        'test_mode': str(paymentTestMode)
-      }
-      #print(sinfo1)
-      result = Transaction.start(**sinfo1)
-      transactionId = result.transaction.transaction_id
-      logging.debug('Transaction ID: ' +transactionId)
-      #print(result)
-      #print('Transaction ID: {id}\nPayment reference: {ref}\nPayment URL: {url}'.format(id=result.transaction.transaction_id, ref=result.get_payment_reference(), url=result.get_redirect_url()))
-    except SchemaException as se:
-      logging.error('SCHEMA ERROR:\n\t' + str(se))
-    except ErrorException as ee:
-      logging.error('API ERROR:\n' + str(ee))
-    except Exception as e:
-      logging.error('GENERIC EXCEPTION:\n' + str(e))
-
+    pay = PayNL()
+    transactionId = pay.payOrder(app.activeOrder)
+    logging.debug("TransactionId: " +transactionId)
+    
     #pay.nl communicatie: check order status
-    orderStatus = 'PENDING'
+    transactionStatus = 'PENDING'
     wait = 0
-    while orderStatus == 'PENDING' and wait < 10 and transactionId:
-      try:
-        #time.sleep(2)
-        statusResult = Transaction.status(transaction_id=transactionId)
-        #print(statusResult)
-        orderStatus = statusResult.payment_details.state_name
-      except SchemaException as se:
-        logging.error('SCHEMA ERROR:\n\t' + str(se))
-        logging.error('\nSCHEMA ERRORS:\n\t' + str(se.errors))
-      except ErrorException as ee:
-        logging.error('API ERROR:\n' + str(ee))
-      except Exception as e:
-        logging.error('GENERIC EXCEPTION:\n' + str(e))
+    while transactionStatus == 'PENDING' and wait < 20 and transactionId:
+      transactionStatus = pay.getTransactionStatus(transactionId)
+      logging.debug("TransactionStatus: " +transactionStatus)
       time.sleep(2)
       wait += 1
-    if(orderStatus == 'PAID'):
-      logging.info('betaling gelukt!')
-      app.startMachine()
+
+    #timeout is reached or status is no longer PENDING
+    if(transactionStatus == 'PAID'):
+      logging.debug('betaling gelukt!')
+      app.changeScreen('payment_success')
     else:
-      logging.info('fout bij betaling')
-      self.cancelTransaction(transactionId)
+      logging.debug('fout bij betaling')
+      pay.cancelTransaction(transactionId)
       app.changeScreen('payment_failed')
-      
-  def cancelTransaction(self, transactionId):
-    try:
-      url = 'https://rest.pay.nl/v2/transactions/'+transactionId+'/cancel'
-      credentials = HTTPBasicAuth(CONFIG.get('Payment','tokenCode'),CONFIG.get('Payment','apiToken'))
-      headers = {
-        "accept": "application/json",
-        "content-type": "application/json",
-      }
-      response = requests.patch(url, headers=headers, auth=credentials)
-      logging.debug(response.text)
-    except requests.exceptions.RequestException as e:
-      logging.error('GENERIC EXCEPTION:\n' + str(e))
-    finally:
-      logging.debug('Cancelling transaction done')
     
 class InProgress(Screen):
   pass
@@ -172,26 +138,164 @@ class PaymentFailed(Screen):
   def on_enter(self):
     logging.debug("=== Payment failed ===")
     app=App.get_running_app()
+    app.activeOrder = ''
     Clock.schedule_once(partial(app.changeScreen, "program_selection"),5)
+
+class PaymentSuccess(Screen):
+  def on_enter(self):
+    logging.debug("=== Payment success ===")
+    app=App.get_running_app()
+    app.startMachine()
+
+class PaymentWashcardWrongCarwash(Screen):
+  def on_enter(self):
+    logging.debug("=== Wrong Carwash ===")
+    app=App.get_running_app()
+    time.sleep(6)
+    app.changeScreen('program_selection')
+    
+class PaymentWashcardCardNotValid(Screen):
+  def on_enter(self):
+    logging.debug("=== Washcard not valid ===")
+    app=App.get_running_app()
+    time.sleep(3)
+    app.changeScreen('program_selection')
+    
+class PaymentWashcardCardNotFound(Screen):
+  def on_enter(self):
+    logging.debug("=== No Washcard found ===")
+    app=App.get_running_app()
+    time.sleep(3)
+    app.changeScreen('program_selection')
+
+class PaymentWashcardInsufficientBalance(Screen):
+  def on_enter(self):
+    logging.debug("=== Insufficient balance on washcard ===")
+    app=App.get_running_app()
+    time.sleep(3)
+    app.changeScreen('program_selection')
 
 class Error(Screen):
   pass
 
-class Carwash(App):  
+class UpgradeWashcardReadCard(Screen):
+  def on_enter(self):
+    logging.debug("=== Upgrade washcard - read card ===")
+    app=App.get_running_app()
+    washcard = Washcard()
+    washcard.readCard()
+    if(washcard.uid == ''):
+      app.changeScreen('payment_washcard_card_not_found')
+    elif(washcard.carwash == ''):
+      app.changeScreen('payment_washcard_card_not_valid')
+    elif(int(washcard.carwash.id) != int(CONFIG.get('General','carwashId'))):
+      logging.debug('Washcard carwash_id: ' +str(washcard.carwash.id))
+      logging.debug('Config carwash_id: ' +CONFIG.get('General','carwashId'))
+      screen = app.sm.get_screen('payment_washcard_wrong_carwash')
+      screen.ids.lbl_carwash.text = washcard.carwash.name +'\n' +washcard.carwash.city
+      app.changeScreen('payment_washcard_wrong_carwash')
+    else:  
+      screen = app.sm.get_screen('upgrade_washcard_choose_amount')
+      screen.ids.lbl_balance.text = locale.currency(float(washcard.balance))
+      screen.ids.lbl_carwash.text = washcard.carwash.name +' - ' +washcard.carwash.city
+      screen.ids.lbl_company.text = washcard.company.name +' - ' +washcard.carwash.city
+      app.activeWashcard = washcard
+      app.changeScreen('upgrade_washcard_choose_amount')
+
+class UpgradeWashcardChooseAmount(Screen):
+  def on_enter(self):
+    logging.debug("=== Upgrade Washcard - Choose Amount ===")
+    
+  def chooseAmount(self,amount):
+    logging.debug("=== Selected amount: " +str(amount))
+    app=App.get_running_app()
+    app.washcardTopup = amount;
+    app.changeScreen("upgrade_washcard_payment")
+
+  def cancel(self):
+    app=App.get_running_app()
+    app.changeScreen("program_selection")
+
+class UpgradeWashcardPayment(Screen):
+  def on_enter(self):
+    logging.debug("=== Upgrade washcard - payment ===")
+    app=App.get_running_app()
+    logging.debug(app.activeWashcard.uid)
+    logging.debug(str(app.washcardTopup))
+    
+    #pay.nl communicatie: start transaction
+    pay = PayNL()
+    transactionId = pay.payCardUpgrade(app.washcardTopup, app.activeWashcard)
+    logging.debug("TransactionId: " +transactionId)
+    
+    #pay.nl communicatie: check order status
+    transactionStatus = 'PENDING'
+    wait = 0
+    while transactionStatus == 'PENDING' and wait < 20 and transactionId:
+      transactionStatus = pay.getTransactionStatus(transactionId)
+      logging.debug("TransactionStatus: " +transactionStatus)
+      time.sleep(2)
+      wait += 1
+
+    #timeout is reached or status is no longer PENDING
+    if(transactionStatus == 'PAID'):
+      logging.debug('payment success!')
+      app.changeScreen('upgrade_washcard_payment_success')
+    else:
+      logging.debug('payment error')
+      pay.cancelTransaction(transactionId)
+      app.changeScreen('upgrade_washcard_payment_failed')
+
+class UpgradeWashcardPaymentSuccess(Screen):
+  def on_enter(self):
+    logging.debug("=== Upgrade washcard - payment success ===")
+    app=App.get_running_app()
+    card = app.activeWashcard
+    card.upgrade(app.washcardTopup)
+    time.sleep(5)
+    app.activeWashcard = ''
+    app.washcardTopup = ''
+    app.changeScreen("program_selection")
+
+class UpgradeWashcardPaymentFailed(Screen):
+  def on_enter(self):
+    logging.debug("=== Upgrade washcard - payment failed ===")
+    app=App.get_running_app()
+    app.activeWashcard = ''
+    app.washcardTopup = ''
+    time.sleep(5)
+    app.changeScreen("program_selection")
+    
+class Carwash(App):
+  activeOrder = ''
+  activeWashcard = ''
+  washcardTopup = 0
+  
   def build(self):
     #setup the screens
     Builder.load_file('screens.kv')
 
     #setup possible uptick based on weekday
-    self.setUptick()
-    self.activeProgram = 0
+    #self.setUptick()
 
     #setup screens
     self.sm = ScreenManager(transition = NoTransition())
     self.sm.add_widget(ProgramSelection(name="program_selection"))
     self.sm.add_widget(ProgramSelectionHigh(name="program_selection_high"))
+    self.sm.add_widget(PaymentMethod(name="payment_method"))
     self.sm.add_widget(Payment(name="payment"))
+    self.sm.add_widget(PaymentWashcard(name="payment_washcard"))
+    self.sm.add_widget(PaymentWashcardCardNotValid(name="payment_washcard_card_not_valid"))
+    self.sm.add_widget(PaymentWashcardWrongCarwash(name="payment_washcard_wrong_carwash"))
+    self.sm.add_widget(PaymentWashcardCardNotFound(name="payment_washcard_card_not_found"))
+    self.sm.add_widget(PaymentWashcardInsufficientBalance(name="payment_washcard_insufficient_balance"))
     self.sm.add_widget(PaymentFailed(name="payment_failed"))
+    self.sm.add_widget(PaymentSuccess(name="payment_success"))
+    self.sm.add_widget(UpgradeWashcardReadCard(name="upgrade_washcard_read_card"))
+    self.sm.add_widget(UpgradeWashcardChooseAmount(name="upgrade_washcard_choose_amount"))
+    self.sm.add_widget(UpgradeWashcardPayment(name="upgrade_washcard_payment"))
+    self.sm.add_widget(UpgradeWashcardPaymentSuccess(name="upgrade_washcard_payment_success"))
+    self.sm.add_widget(UpgradeWashcardPaymentFailed(name="upgrade_washcard_payment_failed"))
     self.sm.add_widget(Error(name="error"))
     self.sm.add_widget(InProgress(name="in_progress"))
     #setup leds
@@ -200,12 +304,12 @@ class Carwash(App):
 
   def selectProgram(self,program):
     logging.debug("Program selected: " +str(program))
-    self.activeProgram = program
-    self.changeScreen("payment")
-    #Clock.schedule_once(partial(self.changeScreen, "payment"), 3)
+    order = Order(program)
+    self.activeOrder = order
+    self.changeScreen("payment_method")
 
-  def startMachine(self, dt):
-    bin = '{0:04b}'.format(self.activeProgram)
+  def startMachine(self):
+    bin = '{0:04b}'.format(self.activeOrder.program)
     logging.debug("Starting machine. Binary: " +str(bin))
     arr = list(bin)
     print(arr)
@@ -223,35 +327,12 @@ class Carwash(App):
     GPIO.output(BIT4LED,GPIO.LOW)
     GPIO.output(BIT8LED,GPIO.LOW)
 
-  def setUptick(self):
-    unmanned_days = CONFIG.get('General','unmannedWeekdays')
-    uptick = CONFIG.get('General','mannedUptick')
-    programs = CONFIG.get('General','prices')
-    self.uptick = 0
-
-  def getOrderId(self):
-    orderId = 0
-    try:
-      file = open('orderId.txt', 'r+')
-      read = file.read()
-      logging.debug('orderId: ' +read)
-      if read:
-        orderId = int(read)
-      logging.debug('Gevonden order id: ' +str(orderId))
-      orderId += 1
-      file.seek(0)
-      file.write(str(orderId))
-      logging.debug('Nieuw order id: ' +str(orderId))
-    finally:
-      #file.truncate()
-      file.close()
-    return orderId
-
   def setupIO(self):
     GPIO.setmode(GPIO.BCM)
     #led setup
     GPIO.setup(ERROR_LED, GPIO.OUT)
     GPIO.setup(PROGRESS_LED, GPIO.OUT)
+    #machine setup
     GPIO.setup(BIT1LED, GPIO.OUT)  
     GPIO.setup(BIT2LED, GPIO.OUT)  
     GPIO.setup(BIT4LED, GPIO.OUT)  
@@ -322,6 +403,4 @@ def signal_handler(sig, frame):
 if __name__ == '__main__':
     signal.signal(signal.SIGINT, signal_handler)
     carwash = Carwash()
-
     carwash.run()
-    #Carwash().run()

@@ -27,6 +27,7 @@
       color: button_text_color
       on_release:
         root.selectProgram(4)
+
 <ProgramSelection>:
   canvas.before:
     Rectangle:
@@ -40,7 +41,7 @@
     Image:
       source: 'logo.png'
       size: self.texture_size
-      size_hint_y: 1.5
+      size_hint_y: 2.5
     Label:
       text: " "
       font_size: heading_font_size
@@ -73,6 +74,47 @@
       color: button_text_color
       on_release:
         root.selectProgram(4)
+    Button:
+      text: "Waspas opwaarderen"
+      background_color : button_background_color
+      font_size: default_font_size
+      color: button_text_color
+      on_release:
+        root.upgradeWashcard()  
+        
+<PaymentMethod>:
+  canvas.before:
+    Rectangle:
+      pos: self.pos
+      size: self.size
+    Color:
+      rgba: background_color
+  BoxLayout:
+    size: root.width, root.height
+    orientation: 'vertical'
+    Image:
+      source: 'logo.png'
+      size: self.texture_size
+      size_hint_y: 2.5
+    Label:
+      text: "Kies betaalmethode"
+      font_size: heading_font_size
+      color: text_color
+    Button:
+      text: "PIN"
+      background_color : button_background_color
+      font_size: default_font_size
+      color: button_text_color
+      on_release:
+        root.selectPin()
+    Button:
+      text: "Waspas"
+      background_color : button_background_color
+      font_size: default_font_size
+      color: button_text_color
+      on_release:
+        root.selectWashcard()
+        
 <Payment>:
   canvas.before:
     Rectangle:
@@ -92,6 +134,268 @@
       font_size: heading_font_size
       color: text_color
 
+<PaymentWashcard>:
+  canvas.before:
+    Rectangle:
+      pos: self.pos
+      size: self.size
+    Color:
+      rgba: background_color
+  BoxLayout:
+    size: root.width, root.height
+    orientation: 'vertical'
+    Image:
+      source: 'logo.png'
+      size: self.texture_size
+      size_hint_y: 1.5
+    Label:
+      text: "Houd waspas voor\nde lezer"
+      font_size: heading_font_size
+      color: text_color
+      
+<UpgradeWashcardReadCard>:
+  canvas.before:
+    Rectangle:
+      pos: self.pos
+      size: self.size
+    Color:
+      rgba: background_color
+  BoxLayout:
+    size: root.width, root.height
+    orientation: 'vertical'
+    Image:
+      source: 'logo.png'
+      size: self.texture_size
+      size_hint_y: 1.5
+    Label:
+      text: "Houd de waspas\nvoor de lezer"
+      font_size: heading_font_size
+      color: text_color
+
+<UpgradeWashcardChooseAmount>:
+  canvas.before:
+    Rectangle:
+      pos: self.pos
+      size: self.size
+    Color:
+      rgba: background_color
+  BoxLayout:
+    size: root.width, root.height
+    orientation: 'vertical'
+    Label:
+      text: "Tegoed op waspas:"
+      halign: 'left'
+      text_size: self.size
+      font_size: heading_font_size
+      color: text_color
+    Label:
+      id: lbl_balance
+      halign: 'left'
+      text_size: self.size
+      text: '----'
+      font_size: heading_font_size
+      color: text_color
+    Label:
+      text: "Wasstraat info"
+      halign: 'left'
+      text_size: self.size
+      font_size: heading_font_size
+      color: text_color
+    Label:
+      id: lbl_carwash
+      halign: 'left'
+      text_size: self.size
+      text: "----"
+      font_size: default_font_size
+      color: text_color
+    Label:
+      text: "Bedrijfsinfo"
+      halign: 'left'
+      text_size: self.size
+      font_size: heading_font_size
+      color: text_color
+    Label:
+      id: lbl_company
+      halign: 'left'
+      text_size: self.size
+      text: "----"
+      font_size: default_font_size
+      color: text_color  
+    Label:
+      text: "Kies bedrag"
+      font_size: heading_font_size
+      color: text_color
+    BoxLayout:
+      size: root.width, root.height
+      orientation: 'horizontal'
+      Button:
+        text: "€ 20,00"
+        background_color : button_background_color
+        font_size: default_font_size
+        color: button_text_color
+        on_release:
+          root.chooseAmount(20)
+      Button:
+        text: "€ 50,00"
+        background_color : button_background_color
+        font_size: default_font_size
+        color: button_text_color
+        on_release:
+          root.chooseAmount(50)
+    BoxLayout:
+      size: root.width, root.height
+      orientation: 'horizontal'
+      Button:
+        text: "€ 100,00"
+        background_color : button_background_color
+        font_size: default_font_size
+        color: button_text_color
+        on_release:
+          root.chooseAmount(100)
+      Button:
+        text: "€ 200,00"
+        background_color : button_background_color
+        font_size: default_font_size
+        color: button_text_color
+        on_release:
+          root.chooseAmount(200)
+    Button:
+      text: "Annuleren"
+      background_color : button_background_color
+      font_size: default_font_size
+      color: button_text_color
+      on_release:
+        root.cancel()
+<UpgradeWashcardPayment>:
+  canvas.before:
+    Rectangle:
+      pos: self.pos
+      size: self.size
+    Color:
+      rgba: background_color
+  BoxLayout:
+    size: root.width, root.height
+    orientation: 'vertical'
+    Image:
+      source: 'logo.png'
+      size: self.texture_size
+      size_hint_y: 1.5
+    Label:
+      text: "Voltooi betaling\nop PIN terminal"
+      font_size: heading_font_size
+      color: text_color
+
+<UpgradeWashcardPaymentFailed>:
+  canvas.before:
+    Rectangle:
+      pos: self.pos
+      size: self.size
+    Color:
+      rgba: background_color
+  BoxLayout:
+    orientation: 'vertical'
+    Image:
+      source: 'error.png'
+      size: self.texture_size
+    Label:
+      text: "Betaling niet gelukt!"
+      font_size: heading_font_size
+      color: error_color
+      
+<UpgradeWashcardPaymentSuccess>:
+  canvas.before:
+    Rectangle:
+      pos: self.pos
+      size: self.size
+    Color:
+      rgba: background_color
+  BoxLayout:
+    orientation: 'vertical'
+    Image:
+      source: 'success.png'
+      size: self.texture_size
+    Label:
+      text: "Opwaarderen gelukt!"
+      font_size: heading_font_size
+      color: text_color
+    Label:
+      text: "Terug naar programmaselectie"
+      font_size: default_font_size
+      color: text_color
+      
+<PaymentWashcardCardNotValid>:
+  canvas.before:
+    Rectangle:
+      pos: self.pos
+      size: self.size
+    Color:
+      rgba: background_color
+  BoxLayout:
+    orientation: 'vertical'
+    Image:
+      source: 'error.png'
+      size: self.texture_size
+    Label:
+      text: "Waspas niet geldig"
+      font_size: heading_font_size
+      color: error_color
+
+<PaymentWashcardWrongCarwash>:
+  canvas.before:
+    Rectangle:
+      pos: self.pos
+      size: self.size
+    Color:
+      rgba: background_color
+  BoxLayout:
+    orientation: 'vertical'
+    Image:
+      source: 'error.png'
+      size: self.texture_size
+    Label:
+      text: "Waspas alleen geldig bij:"
+      font_size: heading_font_size
+      color: error_color
+    Label:
+      id: lbl_carwash
+      text: "----"
+      font_size: heading_font_size
+      color: text_color
+
+<PaymentWashcardCardNotFound>:
+  canvas.before:
+    Rectangle:
+      pos: self.pos
+      size: self.size
+    Color:
+      rgba: background_color
+  BoxLayout:
+    orientation: 'vertical'
+    Image:
+      source: 'error.png'
+      size: self.texture_size
+    Label:
+      text: "Geen waspas gevonden"
+      font_size: heading_font_size
+      color: error_color
+
+<PaymentWashcardInsufficientBalance>:
+  canvas.before:
+    Rectangle:
+      pos: self.pos
+      size: self.size
+    Color:
+      rgba: background_color
+  BoxLayout:
+    orientation: 'vertical'
+    Image:
+      source: 'error.png'
+      size: self.texture_size
+    Label:
+      text: "Onvoldoende saldo"
+      font_size: heading_font_size
+      color: error_color
+
 <PaymentFailed>:
   canvas.before:
     Rectangle:
@@ -108,6 +412,28 @@
       text: "Betaling niet gelukt!"
       font_size: heading_font_size
       color: error_color
+      
+<PaymentSuccess>:
+  canvas.before:
+    Rectangle:
+      pos: self.pos
+      size: self.size
+    Color:
+      rgba: background_color
+  BoxLayout:
+    orientation: 'vertical'
+    Image:
+      source: 'success.png'
+      size: self.texture_size
+    Label:
+      text: "Betaling gelukt!"
+      font_size: heading_font_size
+      color: text_color
+    Label:
+      text: "Machine wordt gestart"
+      font_size: default_font_size
+      color: text_color
+      
 <InProgress>:
   canvas.before:
     Rectangle:
@@ -126,6 +452,7 @@
       text: "Bezig met wassen"
       font_size: heading_font_size
       color: text_color
+
 <Error>:
   canvas.before:
     Rectangle:

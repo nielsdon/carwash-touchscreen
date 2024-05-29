@@ -1,3 +1,4 @@
+"""A Helper class to structure the washing orders"""
 import configparser
 import logging
 

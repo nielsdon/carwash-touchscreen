@@ -4,14 +4,10 @@ import locale
 import logging
 import os
 import signal
-import subprocess
 import sys
 import time
-from datetime import datetime
 from functools import partial
-from signal import pause
 
-import requests
 import RPi.GPIO as GPIO
 from kivy.app import App
 from kivy.clock import Clock, mainthread
@@ -88,11 +84,11 @@ class PaymentWashcard(Screen):
         app = App.get_running_app()
         washcard = Washcard()
         washcard.readCard()
-        if (washcard.uid == ''):
+        if washcard.uid == '':
             app.changeScreen('payment_washcard_card_not_found')
-        elif (washcard.carwash == ''):
+        elif washcard.carwash == '':
             app.changeScreen('payment_washcard_card_not_valid')
-        elif (int(washcard.carwash.id) != CARWASH_ID):
+        elif int(washcard.carwash.id) != CARWASH_ID:
             logging.debug("Washcard carwash_id: %s", str(washcard.carwash.id))
             logging.debug("Config carwash_id: %s", str(CARWASH_ID))
             screen = app.sm.get_screen('payment_washcard_wrong_carwash')
@@ -100,14 +96,14 @@ class PaymentWashcard(Screen):
             app.changeScreen('payment_washcard_wrong_carwash')
         else:
             responseCode = washcard.pay(app.activeOrder)
-            logging.debug('Response code: ' + str(responseCode))
-            if (responseCode == 0):
+            logging.debug('Response code: %s', str(responseCode))
+            if responseCode == 0:
                 app.changeScreen('payment_success')
-            elif (responseCode == 1):
+            elif responseCode == 1:
                 app.changeScreen('payment_washcard_insufficient_balance')
-            elif (responseCode == 2):
+            elif responseCode == 2:
                 app.changeScreen('payment_washcard_card_not_found')
-            elif (responseCode == 3):
+            elif responseCode == 3:
                 app.changeScreen('payment_washcard_card_not_valid')
             else:
                 app.changeScreen('payment_failed')
@@ -121,19 +117,19 @@ class Payment(Screen):
         # pay.nl communicatie: start transaction
         pay = PayNL()
         transactionId = pay.payOrder(app.activeOrder)
-        logging.debug("TransactionId: " + transactionId)
+        logging.debug("TransactionId: %s", transactionId)
 
         # pay.nl communicatie: check order status
         transactionStatus = 'PENDING'
         wait = 0
         while transactionStatus == 'PENDING' and wait < 20 and transactionId:
             transactionStatus = pay.getTransactionStatus(transactionId)
-            logging.debug("TransactionStatus: " + transactionStatus)
+            logging.debug("TransactionStatus: %s", transactionStatus)
             time.sleep(2)
             wait += 1
 
         # timeout is reached or status is no longer PENDING
-        if (transactionStatus == 'PAID'):
+        if transactionStatus == 'PAID':
             logging.debug('betaling gelukt!')
             app.changeScreen('payment_success')
         else:
@@ -203,12 +199,12 @@ class UpgradeWashcardReadCard(Screen):
         app = App.get_running_app()
         washcard = Washcard()
         washcard.readCard()
-        if (washcard.uid == ''):
+        if washcard.uid == '':
             app.changeScreen('payment_washcard_card_not_found')
-        elif (washcard.carwash == ''):
+        elif washcard.carwash == '':
             app.changeScreen('payment_washcard_card_not_valid')
-        elif (int(washcard.carwash.id) != CARWASH_ID):
-            logging.debug('Washcard carwash_id: ' + str(washcard.carwash.id))
+        elif int(washcard.carwash.id) != CARWASH_ID:
+            logging.debug('Washcard carwash_id: %s', str(washcard.carwash.id))
             logging.debug('Config carwash_id: %s', CARWASH_ID)
             screen = app.sm.get_screen('payment_washcard_wrong_carwash')
             screen.ids.lbl_carwash.text = washcard.carwash.name + '\n' + washcard.carwash.city
@@ -228,7 +224,7 @@ class UpgradeWashcardChooseAmount(Screen):
         logging.debug("=== Upgrade Washcard - Choose Amount ===")
 
     def chooseAmount(self, amount):
-        logging.debug("=== Selected amount: " + str(amount))
+        logging.debug("=== Selected amount: %s", str(amount))
         app = App.get_running_app()
         app.washcardTopup = amount
         app.changeScreen("upgrade_washcard_payment")
@@ -249,19 +245,19 @@ class UpgradeWashcardPayment(Screen):
         pay = PayNL()
         transactionId = pay.payCardUpgrade(
             app.washcardTopup, app.activeWashcard)
-        logging.debug("TransactionId: " + transactionId)
+        logging.debug("TransactionId: %s", transactionId)
 
         # pay.nl communicatie: check order status
         transactionStatus = 'PENDING'
         wait = 0
         while transactionStatus == 'PENDING' and wait < 20 and transactionId:
             transactionStatus = pay.getTransactionStatus(transactionId)
-            logging.debug("TransactionStatus: " + transactionStatus)
+            logging.debug("TransactionStatus: %s", transactionStatus)
             time.sleep(2)
             wait += 1
 
         # timeout is reached or status is no longer PENDING
-        if (transactionStatus == 'PAID'):
+        if transactionStatus == 'PAID':
             logging.debug('payment success!')
             app.changeScreen('upgrade_washcard_payment_success')
         else:
@@ -338,23 +334,23 @@ class Carwash(App):
         return self.sm
 
     def selectProgram(self, program):
-        logging.debug("Program selected: " + str(program))
+        logging.debug("Program selected: %s", str(program))
         order = Order(program)
         self.activeOrder = order
         self.changeScreen("payment_method")
 
     def startMachine(self):
         bin = '{0:04b}'.format(self.activeOrder.program)
-        logging.debug("Starting machine. Binary: " + str(bin))
+        logging.debug("Starting machine. Binary: %s", str(bin))
         arr = list(bin)
         print(arr)
-        if (int(arr[3]) == 1):
+        if int(arr[3]) == 1:
             GPIO.output(BIT1LED, GPIO.HIGH)
-        if (int(arr[2]) == 1):
+        if int(arr[2]) == 1:
             GPIO.output(BIT2LED, GPIO.HIGH)
-        if (int(arr[1]) == 1):
+        if int(arr[1]) == 1:
             GPIO.output(BIT4LED, GPIO.HIGH)
-        if (int(arr[0]) == 1):
+        if int(arr[0]) == 1:
             GPIO.output(BIT8LED, GPIO.HIGH)
         time.sleep(2)
         GPIO.output(BIT1LED, GPIO.LOW)
@@ -393,7 +389,7 @@ class Carwash(App):
                               callback=self.highVehicleStatusChanged, bouncetime=300)
 
     def changeScreen(self, screenName, *args):
-        logging.debug("Showing screen " + screenName)
+        logging.debug("Showing screen %s", screenName)
         self.sm.current = screenName
 
     @mainthread

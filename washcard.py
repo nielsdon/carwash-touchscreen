@@ -6,7 +6,7 @@ import logging
 import subprocess
 
 import requests
-from munch import *
+from munch import munchify
 from requests.auth import HTTPBasicAuth
 
 API_URL = 'https://api.washterminalpro.nl'
@@ -63,7 +63,7 @@ class Washcard():
 
     def getInfo(self):
         logging.debug('cardinfo(): getting info for card %s', self.uid)
-        if (self.uid == ''):
+        if self.uid == '':
             return {}
         url = self.cardInfoUrl % self.uid
         logging.debug('url: %s', url)
@@ -81,7 +81,7 @@ class Washcard():
 
     def pay(self, order):
         logging.debug('Paying order %s', order.description)
-        if (self.uid == ''):
+        if self.uid == '':
             logging.debug('no active card')
             return 2  # no active card
 
@@ -109,7 +109,7 @@ class Washcard():
                 url, headers=self.headers, auth=self.credentials, json=data)
             data = json.loads(response.text)
             logging.debug(response.status_code)
-            if (response.status_code == 500):
+            if response.status_code == 500:
                 return 1
         except requests.exceptions.RequestException as e:
             logging.error('GENERIC EXCEPTION:\n%s', str(e))
@@ -119,14 +119,14 @@ class Washcard():
         return 0
 
     def readCard(self):
-        if (CONFIG.get('General', 'NfcReader') == 'acr122u'):
+        if CONFIG.get('General', 'NfcReader') == 'acr122u':
             command = "nfc-poll"
             result = subprocess.run(
                 command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
             nfc_uid = ''
-            if (result.returncode != 0):
-                return False
+            if result.returncode != 0:
                 logging.error(result.stderr)
+                return False
             arr = result.stdout.splitlines()
             data = arr[5].split(': ')
             nfc_uid = ':'.join(data[1].strip().split('  '))

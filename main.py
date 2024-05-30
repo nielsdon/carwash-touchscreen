@@ -379,14 +379,11 @@ class Carwash(App):
         GPIO.setup(HIGH_VEHICLE_INPUT, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
 
         # machine in progress/done
-        GPIO.add_event_detect(PROGRESS_INPUT, GPIO.BOTH,
-                              callback=self.progressStatusChanged, bouncetime=300)
+        #GPIO.add_event_detect(PROGRESS_INPUT, GPIO.BOTH, callback=self.progressStatusChanged, bouncetime=300)
         # error detected/resolved
-        GPIO.add_event_detect(ERROR_INPUT, GPIO.BOTH,
-                              callback=self.errorStatusChanged, bouncetime=300)
+        #GPIO.add_event_detect(ERROR_INPUT, GPIO.BOTH, callback=self.errorStatusChanged, bouncetime=300)
         # high vehicle status changed
-        GPIO.add_event_detect(HIGH_VEHICLE_INPUT, GPIO.BOTH,
-                              callback=self.highVehicleStatusChanged, bouncetime=300)
+        #GPIO.add_event_detect(HIGH_VEHICLE_INPUT, GPIO.BOTH, callback=self.highVehicleStatusChanged, bouncetime=300)
 
     def changeScreen(self, screenName, *args):
         logging.debug("Showing screen %s", screenName)

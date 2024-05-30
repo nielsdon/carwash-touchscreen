@@ -9,5 +9,5 @@ munch==4.0.0
 packaging==24.0
 Pygments==2.18.0
 requests==2.32.2
+RPi.GPIO==0.7.1
 urllib3==2.2.1
-wheel==0.43.0

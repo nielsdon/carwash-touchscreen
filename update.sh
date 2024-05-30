@@ -41,4 +41,4 @@ tar -xvf archive.tar.gz --strip-components=1
 rm archive.tar.gz
 
 # run npm install to make sure all node modules are installed as listed in package.json
-npm install
+pip install -r requirements.txt

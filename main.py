@@ -340,9 +340,9 @@ class Carwash(App):
         self.changeScreen("payment_method")
 
     def startMachine(self):
-        bin = '{0:04b}'.format(self.activeOrder.program)
-        logging.debug("Starting machine. Binary: %s", str(bin))
-        arr = list(bin)
+        binary = '{0:04b}'.format(self.activeOrder.program)
+        logging.debug("Starting machine. Binary: %s", str(binary))
+        arr = list(binary)
         print(arr)
         if int(arr[3]) == 1:
             GPIO.output(BIT1LED, GPIO.HIGH)
@@ -430,11 +430,11 @@ class Carwash(App):
             # show normal program selection screen
             self.changeScreen("program_selection")
 
-
 def signal_handler(sig, frame):
+    logging.debug("Cleaning up GPIO ports")
     GPIO.cleanup()
+    logging.debug("Exiting....")
     sys.exit(0)
-
 
 if __name__ == '__main__':
     signal.signal(signal.SIGINT, signal_handler)

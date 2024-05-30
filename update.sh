@@ -40,5 +40,8 @@ tar -xvf archive.tar.gz --strip-components=1
 # Clean up
 rm archive.tar.gz
 
-# run npm install to make sure all node modules are installed as listed in package.json
+# update the pip installer
+pip install --upgrade pip
+
+# run pip installer to make sure all node modules are installed as listed in requirements.txt
 pip install -r requirements.txt

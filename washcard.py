@@ -134,4 +134,7 @@ class Washcard():
             logging.debug(nfc_uid)
             return self.loadInfo()
         else:
-            return False
+            data = input('waiting for NFC UID')
+            logging.debug('Input: %s', data)
+            return data
+#            return False

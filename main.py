@@ -37,8 +37,6 @@ BIT8LED = int(CONFIG.get('GPIO', 'BIT8LED'))
 Logger.setLevel(int(CONFIG.get('General', 'logLevel')))
 logging.basicConfig(
     encoding='utf-8', level=int(CONFIG.get('General', 'logLevel')))
-locale.setlocale(locale.LC_ALL, '')
-
 
 class ProgramSelection(Screen):
     def on_enter(self, *args, **kwargs):

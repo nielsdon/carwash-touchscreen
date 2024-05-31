@@ -4,7 +4,6 @@ import configparser
 import json
 import logging
 import subprocess
-import asyncio
 import requests
 import evdev
 from munch import munchify
@@ -68,7 +67,6 @@ class Washcard():
             return {}
         url = self.cardInfoUrl % self.uid
         logging.debug('url: %s', url)
-        status = ''
         data = {}
         try:
             response = requests.get(url, headers=self.headers, auth=self.credentials)

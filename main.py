@@ -8,7 +8,7 @@ import sys
 import time
 from functools import partial
 
-import RPi.GPIO as GPIO
+import RPi.GPIO as GPIO # type: ignore
 from kivy.app import App
 from kivy.clock import Clock, mainthread
 from kivy.lang import Builder

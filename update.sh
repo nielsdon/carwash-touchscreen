@@ -1,12 +1,6 @@
 # Source the file containing the environment variables
 source .env
 
-# Make sure language settings are OK:
-export LANGUAGE="nl_NL"
-export LC_ALL="nl_NL"
-export LC_CTYPE="UTF-8"
-export LANG="nl_NL.UTF-8"
-
 # Check if GITHUB_ACCESS_TOKEN is set
 if [ -z "${GITHUB_ACCESS_TOKEN}" ]; then
   echo "Error: GITHUB_ACCESS_TOKEN is not set."

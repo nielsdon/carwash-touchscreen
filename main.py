@@ -12,6 +12,7 @@ import RPi.GPIO as GPIO
 from kivy.app import App
 from kivy.clock import Clock, mainthread
 from kivy.lang import Builder
+from kivy.core.window import Window
 from kivy.logger import Logger
 from kivy.uix.screenmanager import NoTransition, Screen, ScreenManager
 
@@ -294,6 +295,7 @@ class Carwash(App):
     washcardTopup = 0
 
     def build(self):
+        Window.rotation = 90  # Rotate the window 90 degrees
         # setup the screens
         Builder.load_file('screens.kv')
 
@@ -340,9 +342,9 @@ class Carwash(App):
         self.changeScreen("payment_method")
 
     def startMachine(self):
-        binary = '{0:04b}'.format(self.activeOrder.program)
-        logging.debug("Starting machine. Binary: %s", str(binary))
-        arr = list(binary)
+        bin = '{0:04b}'.format(self.activeOrder.program)
+        logging.debug("Starting machine. Binary: %s", str(bin))
+        arr = list(bin)
         print(arr)
         if int(arr[3]) == 1:
             GPIO.output(BIT1LED, GPIO.HIGH)
@@ -359,31 +361,46 @@ class Carwash(App):
         GPIO.output(BIT8LED, GPIO.LOW)
 
     def setupIO(self):
-        GPIO.setmode(GPIO.BCM)
-        # led setup
-        GPIO.setup(ERROR_LED, GPIO.OUT)
-        GPIO.setup(PROGRESS_LED, GPIO.OUT)
-        # machine setup
-        GPIO.setup(BIT1LED, GPIO.OUT)
-        GPIO.setup(BIT2LED, GPIO.OUT)
-        GPIO.setup(BIT4LED, GPIO.OUT)
-        GPIO.setup(BIT8LED, GPIO.OUT)
-        GPIO.output(BIT1LED, GPIO.LOW)
-        GPIO.output(BIT2LED, GPIO.LOW)
-        GPIO.output(BIT4LED, GPIO.LOW)
-        GPIO.output(BIT8LED, GPIO.LOW)
+        try:
+            GPIO.setmode(GPIO.BCM)
+            # LED setup
+            GPIO.setup(ERROR_LED, GPIO.OUT)
+            GPIO.setup(PROGRESS_LED, GPIO.OUT)
+            # Machine setup
+            GPIO.setup(BIT1LED, GPIO.OUT)
+            GPIO.setup(BIT2LED, GPIO.OUT)
+            GPIO.setup(BIT4LED, GPIO.OUT)
+            GPIO.setup(BIT8LED, GPIO.OUT)
+            GPIO.output(BIT1LED, GPIO.LOW)
+            GPIO.output(BIT2LED, GPIO.LOW)
+            GPIO.output(BIT4LED, GPIO.LOW)
+            GPIO.output(BIT8LED, GPIO.LOW)
 
-        # input setup
-        GPIO.setup(ERROR_INPUT, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
-        GPIO.setup(PROGRESS_INPUT, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
-        GPIO.setup(HIGH_VEHICLE_INPUT, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+            # Input setup
+            GPIO.setup(ERROR_INPUT, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+            GPIO.setup(PROGRESS_INPUT, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+            GPIO.setup(HIGH_VEHICLE_INPUT, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
 
-        # machine in progress/done
-        #GPIO.add_event_detect(PROGRESS_INPUT, GPIO.BOTH, callback=self.progressStatusChanged, bouncetime=300)
-        # error detected/resolved
-        #GPIO.add_event_detect(ERROR_INPUT, GPIO.BOTH, callback=self.errorStatusChanged, bouncetime=300)
-        # high vehicle status changed
-        #GPIO.add_event_detect(HIGH_VEHICLE_INPUT, GPIO.BOTH, callback=self.highVehicleStatusChanged, bouncetime=300)
+            logging.debug(str(ERROR_INPUT))
+            logging.debug(str(PROGRESS_INPUT))
+            logging.debug(str(HIGH_VEHICLE_INPUT))
+            # Machine in progress/done
+            #GPIO.add_event_detect(PROGRESS_INPUT, GPIO.BOTH, callback=self.progressStatusChanged, bouncetime=300)
+            # Error detected/resolved
+            #GPIO.add_event_detect(ERROR_INPUT, GPIO.BOTH, callback=self.errorStatusChanged, bouncetime=300)
+            # High vehicle status changed
+            #GPIO.add_event_detect(HIGH_VEHICLE_INPUT, GPIO.BOTH, callback=self.highVehicleStatusChanged, bouncetime=300)
+            logging.debug("GPIO setup completed successfully")
+
+        except RuntimeError as e:
+            logging.error("RuntimeError during GPIO setup: %s", e)
+            GPIO.cleanup()  # Ensure GPIO is cleaned up to reset the state
+            raise
+
+        except Exception as e:
+            logging.error("Unexpected error during GPIO setup: %s", e)
+            GPIO.cleanup()  # Ensure GPIO is cleaned up to reset the state
+            raise
 
     def changeScreen(self, screenName, *args):
         logging.debug("Showing screen %s", screenName)

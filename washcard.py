@@ -9,19 +9,21 @@ import evdev
 from munch import munchify
 from requests.auth import HTTPBasicAuth
 
-API_URL = 'https://api.washterminalpro.nl'
-API_PATH = '/v1'
-
 CONFIG = configparser.ConfigParser()
 CONFIG.read('config.ini')
 logging.basicConfig(
     encoding='utf-8', level=int(CONFIG.get('General', 'logLevel')))
-
+API_URL = 'https://api.washterminalpro.nl'
+if CONFIG.get('General','testMode') == 'True':
+    API_PATH = '/dev'
+else:
+    API_PATH = '/v1'
 
 class Washcard():
     cardInfoUrl = API_URL +API_PATH +'/card/%s'
     cardBalanceUrl = API_URL +API_PATH +'/card/%s/balance'
     cardTransactionUrl = API_URL +API_PATH +'/transaction/start'
+    id = 0
     uid = ''
     balance = 0
     company = ''
@@ -59,6 +61,7 @@ class Washcard():
             'phone': info.company_phone
         })
         self.balance = info.balance
+        self.id = info.id
         return True
 
     def getInfo(self):
@@ -84,7 +87,7 @@ class Washcard():
             logging.debug('no active card')
             return 2  # no active card
 
-        response = self.startTransaction(order.amount*-1, order.description)
+        response = self.startTransaction(order.amount*-1, order.description, 'WASH')
         return response
 
     def upgrade(self, amount):
@@ -92,30 +95,28 @@ class Washcard():
         response = self.startTransaction(amount, 'Card top-up')
         return response
 
-    def startTransaction(self, amount=0, description=''):
+    def startTransaction(self, amount=0, description='', transaction_type=''):
         logging.debug('Starting transaction')
 
         url = self.cardTransactionUrl
         data = {
             "carwash_id": CONFIG.get('General', 'carwashId'),
-            "nfc_uid": self.uid,
+            "card_id": self.id,
             "amount": amount,
-            "description": description
+            "description": description,
+            "transaction_type": transaction_type
         }
         logging.debug(data)
         try:
             response = requests.post(
                 url, headers=self.headers, auth=self.credentials, json=data)
             data = json.loads(response.text)
-            logging.debug(response.status_code)
-            if response.status_code == 500:
-                return 1
+            return data
         except requests.exceptions.RequestException as e:
             logging.error('GENERIC EXCEPTION:\n%s', str(e))
             return 3  # request error
         finally:
             logging.debug('Creating transaction done')
-        return 0
 
     def readCard(self):            
         if CONFIG.get('General', 'nfcReader') == 'acr122u':

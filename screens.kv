@@ -266,6 +266,7 @@
       color: button_text_color
       on_release:
         root.cancel()
+
 <UpgradeWashcardPayment>:
   canvas.before:
     Rectangle:
@@ -395,6 +396,11 @@
       text: "Onvoldoende saldo"
       font_size: heading_font_size
       color: error_color
+    Label:
+      id: lbl_balance
+      text: "---"
+      font_size: heading_font_size
+      color: error_color
 
 <PaymentFailed>:
   canvas.before:
@@ -433,7 +439,16 @@
       text: "Machine wordt gestart"
       font_size: default_font_size
       color: text_color
-      
+    Label:
+      text: "Nieuw saldo:"
+      font_size: heading_font_size
+      color: text_color
+    Label:
+      id: lbl_balance
+      text: "n.v.t."
+      font_size: default_font_size
+      color: text_color
+
 <InProgress>:
   canvas.before:
     Rectangle:

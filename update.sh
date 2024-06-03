@@ -21,7 +21,8 @@ branch=$1
 # Validate the branch name
 if [ "${branch}" != "develop" ] && [ "${branch}" != "main" ]; then
   echo "Error: Invalid branch name '${branch}'. Only 'develop' and 'main' branches are allowed."
-  exit 1
+  echo "Assuming branch 'main'"
+  branch='main'
 fi
 
 # clean up first

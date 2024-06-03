@@ -51,7 +51,7 @@ class PayNL():
         url = self.createTransactionUrl
         # TEST MODE
         try:
-            if CONFIG.get('Payment', 'testMode') == 'True':
+            if CONFIG.get('General', 'testMode') == 'True':
                 logging.debug('Payment test mode is ON')
                 amount = 0.01
         except:

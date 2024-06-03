@@ -25,6 +25,10 @@ os.environ['KIVY_NO_FILELOG'] = '1'  # eliminate file log
 CONFIG = configparser.ConfigParser()
 CONFIG.read('config.ini')
 CARWASH_ID = int(CONFIG.get('General', 'carwashId'))
+if CONFIG.get('General', 'testMode') == 'True':
+    TEST_MODE = True
+else:
+    TEST_MODE = False
 ERROR_INPUT = int(CONFIG.get('GPIO', 'errorInput'))
 PROGRESS_INPUT = int(CONFIG.get('GPIO', 'progressInput'))
 PROGRESS_LED = int(CONFIG.get('GPIO', 'progressLED'))
@@ -138,8 +142,11 @@ class Payment(Screen):
 
 
 class InProgress(Screen):
-    pass
-
+    def on_enter(self, *args, **kwargs):
+        if TEST_MODE:
+            app = App.get_running_app()
+            time.sleep(3)
+            app.changeScreen('program_selection')
 
 class PaymentFailed(Screen):
     def on_enter(self, *args, **kwargs):

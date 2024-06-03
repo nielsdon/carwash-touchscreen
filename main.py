@@ -41,6 +41,7 @@ BIT8LED = int(CONFIG.get('GPIO', 'BIT8LED'))
 Logger.setLevel(int(CONFIG.get('General', 'logLevel')))
 logging.basicConfig(
     encoding='utf-8', level=int(CONFIG.get('General', 'logLevel')))
+logging.debug('Test mode: %s' ,str(TEST_MODE))
 
 class ProgramSelection(Screen):
     def on_enter(self, *args, **kwargs):
@@ -142,11 +143,7 @@ class Payment(Screen):
 
 
 class InProgress(Screen):
-    def on_enter(self, *args, **kwargs):
-        if TEST_MODE:
-            app = App.get_running_app()
-            time.sleep(3)
-            app.changeScreen('program_selection')
+    pass
 
 class PaymentFailed(Screen):
     def on_enter(self, *args, **kwargs):
@@ -161,6 +158,10 @@ class PaymentSuccess(Screen):
         logging.debug("=== Payment success ===")
         app = App.get_running_app()
         app.startMachine()
+        if TEST_MODE:
+            app = App.get_running_app()
+            time.sleep(3)
+            app.changeScreen('program_selection')
 
 
 class PaymentWashcardWrongCarwash(Screen):

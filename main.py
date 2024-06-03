@@ -24,7 +24,7 @@ os.environ['KIVY_NO_FILELOG'] = '1'  # eliminate file log
 # globals
 CONFIG = configparser.ConfigParser()
 CONFIG.read('config.ini')
-CARWASH_ID = int(CONFIG.get('Washcard', 'carwashId'))
+CARWASH_ID = int(CONFIG.get('General', 'carwashId'))
 ERROR_INPUT = int(CONFIG.get('GPIO', 'errorInput'))
 PROGRESS_INPUT = int(CONFIG.get('GPIO', 'progressInput'))
 PROGRESS_LED = int(CONFIG.get('GPIO', 'progressLED'))

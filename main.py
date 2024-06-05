@@ -312,6 +312,7 @@ class Carwash(App):
 
     def build(self):
         Window.rotation = 90  # Rotate the window 90 degrees
+        Window.show_cursor = False
         # setup the screens
         Builder.load_file('screens.kv')
 

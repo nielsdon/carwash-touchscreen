@@ -8,7 +8,6 @@ import sys
 import time
 import requests
 from functools import partial
-from decimal import Decimal
 
 import RPi.GPIO as GPIO # type: ignore
 from kivy.app import App
@@ -33,9 +32,9 @@ TEST_MODE = bool(CONFIG.get('General', 'testMode') == 'True')
 JWT_TOKEN = ''
 SETTINGS = {}
 if TEST_MODE:
-  API_PATH = 'dev'
+    API_PATH = 'dev'
 else:
-  API_PATH = 'v1'
+    API_PATH = 'v1'
 
 locale.setlocale(locale.LC_ALL, 'nl_NL.UTF-8')
 
@@ -96,25 +95,21 @@ class PaymentWashcard(Screen):
             app.changeScreen('payment_washcard_wrong_carwash')
         else:
             #checks done: create transaction
-#            try:
-                response = washcard.pay(app.activeOrder)
-                logging.debug('Response status code: %s', str(response["statusCode"]))
-                if response["statusCode"] == 200:
-                    screen = app.sm.get_screen('payment_success')
-                    logging.debug('New balance: %s %s',  locale.LC_MONETARY, locale.currency(float(response["balance"])))
-                    screen.ids.lbl_balance.text = locale.currency(float(response["balance"]))
-                    app.changeScreen('payment_success')
-                elif response["statusCode"] == 462:
-                    screen = app.sm.get_screen('payment_washcard_insufficient_balance')
-                    screen.ids.lbl_balance.text = locale.currency(float(washcard.balance))
-                    app.changeScreen('payment_washcard_insufficient_balance')
-                elif response["statusCode"] == 460:
-                    app.changeScreen('payment_washcard_card_not_valid')
-                else:
-                    app.changeScreen('payment_failed')
-#            except Exception as e:
-#                logging.error("Transaction failed", str(e))
-#                app.changeScreen('payment_failed')
+            response = washcard.pay(app.activeOrder)
+            logging.debug('Response status code: %s', str(response["statusCode"]))
+            if response["statusCode"] == 200:
+                screen = app.sm.get_screen('payment_success')
+                logging.debug('New balance: %s %s',  locale.LC_MONETARY, locale.currency(float(response["balance"])))
+                screen.ids.lbl_balance.text = locale.currency(float(response["balance"]))
+                app.changeScreen('payment_success')
+            elif response["statusCode"] == 462:
+                screen = app.sm.get_screen('payment_washcard_insufficient_balance')
+                screen.ids.lbl_balance.text = locale.currency(float(washcard.balance))
+                app.changeScreen('payment_washcard_insufficient_balance')
+            elif response["statusCode"] == 460:
+                app.changeScreen('payment_washcard_card_not_valid')
+            else:
+                app.changeScreen('payment_failed')
 
 
 

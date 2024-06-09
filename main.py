@@ -8,6 +8,7 @@ import sys
 import time
 import requests
 from functools import partial
+from decimal import Decimal
 
 import RPi.GPIO as GPIO # type: ignore
 from kivy.app import App
@@ -16,6 +17,7 @@ from kivy.lang import Builder
 from kivy.core.window import Window
 from kivy.logger import Logger
 from kivy.uix.screenmanager import NoTransition, Screen, ScreenManager
+from kivy.uix.button import Button
 
 from payNL import PayNL
 from washcard import Washcard
@@ -29,16 +31,28 @@ CARWASH_ID = int(CONFIG.get('General', 'carwashId'))
 API_TOKEN = str(CONFIG.get('General', 'apiToken'))
 API_SECRET = str(CONFIG.get('General', 'apiSecret'))
 TEST_MODE = bool(CONFIG.get('General', 'testMode') == 'True')
-JWT_TOKEN = ''
 SETTINGS = {}
+JWT_TOKEN = ''
 if TEST_MODE:
-    API_PATH = 'dev'
+  API_PATH = 'dev'
 else:
-    API_PATH = 'v1'
+  API_PATH = 'v1'
 
 locale.setlocale(locale.LC_ALL, 'nl_NL.UTF-8')
 
 class ProgramSelection(Screen):
+    def __init__(self, **kwargs):
+        super(ProgramSelection, self).__init__(**kwargs)
+        layout = self.ids.selectionLayout
+        for idx, data in enumerate(SETTINGS["general"]["prices"], start=0):
+            if(idx > 0):
+                btn = Button(text="Wasprogramma %s" % str(idx), background_color=[0.21,0.69,0.94,1], font_size="42sp", color=[1,1,1,1])
+                btn.bind(on_release=lambda instance: self.selectProgram(idx))
+                layout.add_widget(btn)
+        btn = Button(text="Waspas opwaarderen", background_color=[0.21,0.69,0.94,1], font_size="42sp", color=[1,1,1,1])
+        btn.bind(on_release=lambda instance: self.upgradeWashcard())
+        layout.add_widget(btn)
+        
     def on_enter(self, *args, **kwargs):
         logging.debug("=== Program selection ===")
         # You can optionally call the superclass's method if needed
@@ -76,7 +90,10 @@ class PaymentMethod(Screen):
         app = App.get_running_app()
         app.changeScreen('payment_washcard')
 
-
+    def cancel(self):
+        app = App.get_running_app()
+        app.changeScreen('program_selection')
+        
 class PaymentWashcard(Screen):
     def on_enter(self, *args, **kwargs):
         logging.debug("=== Payment with washcard ===")

@@ -11,9 +11,8 @@ from requests.auth import HTTPBasicAuth
 
 CONFIG = configparser.ConfigParser()
 CONFIG.read('config.ini')
-logging.basicConfig(
-    encoding='utf-8', level=int(CONFIG.get('General', 'logLevel')))
 API_URL = 'https://api.washterminalpro.nl'
+SETTINGS = {}
 if CONFIG.get('General','testMode') == 'True':
     API_PATH = '/dev'
 else:
@@ -29,14 +28,16 @@ class Washcard():
     company = ''
     carwash = ''
 
-    def __init__(self):
-        self.credentials = HTTPBasicAuth(CONFIG.get(
-            'Washcard', 'apiToken'), CONFIG.get('Washcard', 'apiSecret'))
+    def __init__(self, settings):
+        globals()["SETTINGS"] = settings
+        JWT_TOKEN = SETTINGS["general"]["jwtToken"]
+        logging.basicConfig(encoding='utf-8', level=int(SETTINGS["general"]["logLevel"]))
         self.headers = {
             "accept": "application/json",
             "content-type": "application/json",
+            "Authorization": f'Bearer {JWT_TOKEN}'
         }
-
+        
     def loadInfo(self):
         info = self.getInfo()
         if (info == {}):
@@ -72,7 +73,7 @@ class Washcard():
         logging.debug('url: %s', url)
         data = {}
         try:
-            response = requests.get(url, headers=self.headers, auth=self.credentials)
+            response = requests.get(url, headers=self.headers)
             data = json.loads(response.text)
         except requests.exceptions.RequestException as e:
             logging.error('GENERIC EXCEPTION:\n%s', str(e))
@@ -108,8 +109,7 @@ class Washcard():
         }
         logging.debug(data)
         try:
-            response = requests.post(
-                url, headers=self.headers, auth=self.credentials, json=data)
+            response = requests.post(url, headers=self.headers, json=data)
             data = json.loads(response.text)
             return data
         except requests.exceptions.RequestException as e:
@@ -119,55 +119,40 @@ class Washcard():
             logging.debug('Creating transaction done')
 
     def readCard(self):            
-        if CONFIG.get('General', 'nfcReader') == 'acr122u':
-            command = "nfc-poll"
-            result = subprocess.run(
-                command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-            nfc_uid = ''
-            if result.returncode != 0:
-                logging.error(result.stderr)
-                return False
-            arr = result.stdout.splitlines()
-            data = arr[5].split(': ')
-            nfc_uid = ':'.join(data[1].strip().split('  '))
-            self.uid = nfc_uid.upper()
-            logging.debug(nfc_uid)
-            return self.loadInfo()
-        else:
-            logging.debug("Waiting for NFC UID...")
-            
-            # Specify the path to the input device
-            input_device_path = CONFIG.get('General', 'nfcReader')  # Replace 'eventX' with the correct event number
-            
-            # Create an instance of the InputDevice class
-            device = evdev.InputDevice(input_device_path)
-            
-            # Create a dictionary to map key codes to characters
-            key_map = {
-                2: '1', 3: '2', 4: '3', 5: '4', 6: '5',
-                7: '6', 8: '7', 9: '8', 10: '9', 11: '0'
-            }
-            
-            # Create an empty string to store the NFC UID
-            nfc_uid = ""
-            
-            # Continuously read events from the input device
-            for event in device.read_loop():
-                # Check if the event is a key event
-                if event.type == evdev.ecodes.EV_KEY:
-                    # Check if it's a key press
-                    if event.value == 1:
-                        # Translate the key code to a character
-                        key_code = event.code
-                        
-                        # Check if the key code is in the key map
-                        if key_code in key_map:
-                            # Append the character to the NFC UID string
-                            nfc_uid += key_map[key_code]
-                        
-                        # Check if Enter key is pressed
-                        if key_code == evdev.ecodes.KEY_ENTER:
-                            # Print the NFC UID
-                            logging.debug('NFC Card found: %s' ,nfc_uid)
-                            self.uid = nfc_uid
-                            return self.loadInfo()
+        logging.debug("Waiting for NFC UID...")
+        
+        # Specify the path to the input device
+        input_device_path = SETTINGS["general"]["nfcReader"]  # Replace 'eventX' with the correct event number
+        
+        # Create an instance of the InputDevice class
+        device = evdev.InputDevice(input_device_path)
+        
+        # Create a dictionary to map key codes to characters
+        key_map = {
+            2: '1', 3: '2', 4: '3', 5: '4', 6: '5',
+            7: '6', 8: '7', 9: '8', 10: '9', 11: '0'
+        }
+        
+        # Create an empty string to store the NFC UID
+        nfc_uid = ""
+        
+        # Continuously read events from the input device
+        for event in device.read_loop():
+            # Check if the event is a key event
+            if event.type == evdev.ecodes.EV_KEY:
+                # Check if it's a key press
+                if event.value == 1:
+                    # Translate the key code to a character
+                    key_code = event.code
+                    
+                    # Check if the key code is in the key map
+                    if key_code in key_map:
+                        # Append the character to the NFC UID string
+                        nfc_uid += key_map[key_code]
+                    
+                    # Check if Enter key is pressed
+                    if key_code == evdev.ecodes.KEY_ENTER:
+                        # Print the NFC UID
+                        logging.debug('NFC Card found: %s' ,nfc_uid)
+                        self.uid = nfc_uid
+                        return self.loadInfo()

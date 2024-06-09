@@ -6,6 +6,7 @@ import os
 import signal
 import sys
 import time
+import requests
 from functools import partial
 from decimal import Decimal
 
@@ -25,23 +26,16 @@ os.environ['KIVY_NO_FILELOG'] = '1'  # eliminate file log
 # globals
 CONFIG = configparser.ConfigParser()
 CONFIG.read('config.ini')
-CARWASH_ID = int(CONFIG.get('General', 'carwashId'))
-if CONFIG.get('General', 'testMode') == 'True':
-    TEST_MODE = True
+globals()['CARWASH_ID'] = int(CONFIG.get('General', 'carwashId'))
+API_TOKEN = str(CONFIG.get('General', 'apiToken'))
+API_SECRET = str(CONFIG.get('General', 'apiSecret'))
+TEST_MODE = bool(CONFIG.get('General', 'testMode') == 'True')
+globals()['JWT_TOKEN'] = ''
+if TEST_MODE:
+  API_PATH = 'dev'
 else:
-    TEST_MODE = False
-ERROR_INPUT = int(CONFIG.get('GPIO', 'errorInput'))
-PROGRESS_INPUT = int(CONFIG.get('GPIO', 'progressInput'))
-PROGRESS_LED = int(CONFIG.get('GPIO', 'progressLED'))
-ERROR_LED = int(CONFIG.get('GPIO', 'errorLED'))
-HIGH_VEHICLE_INPUT = int(CONFIG.get('GPIO', 'highVehicle'))
-BIT1LED = int(CONFIG.get('GPIO', 'BIT1LED'))
-BIT2LED = int(CONFIG.get('GPIO', 'BIT2LED'))
-BIT4LED = int(CONFIG.get('GPIO', 'BIT4LED'))
-BIT8LED = int(CONFIG.get('GPIO', 'BIT8LED'))
-Logger.setLevel(int(CONFIG.get('General', 'logLevel')))
-logging.basicConfig(
-    encoding='utf-8', level=int(CONFIG.get('General', 'logLevel')))
+  API_PATH = 'v1'
+
 locale.setlocale(locale.LC_ALL, 'nl_NL.UTF-8')
 
 class ProgramSelection(Screen):
@@ -87,7 +81,7 @@ class PaymentWashcard(Screen):
     def on_enter(self, *args, **kwargs):
         logging.debug("=== Payment with washcard ===")
         app = App.get_running_app()
-        washcard = Washcard()
+        washcard = Washcard(SETTINGS)
         washcard.readCard()
         if washcard.uid == '':
             app.changeScreen('payment_washcard_card_not_found')
@@ -101,9 +95,9 @@ class PaymentWashcard(Screen):
             app.changeScreen('payment_washcard_wrong_carwash')
         else:
             #checks done: create transaction
-            try:
+#            try:
                 response = washcard.pay(app.activeOrder)
-                logging.debug('Response code: %s', str(response))
+                logging.debug('Response status code: %s', str(response["statusCode"]))
                 if response["statusCode"] == 200:
                     screen = app.sm.get_screen('payment_success')
                     logging.debug('New balance: %s %s',  locale.LC_MONETARY, locale.currency(float(response["balance"])))
@@ -117,9 +111,9 @@ class PaymentWashcard(Screen):
                     app.changeScreen('payment_washcard_card_not_valid')
                 else:
                     app.changeScreen('payment_failed')
-            except:
-                logging.error("Transaction failed")
-                app.changeScreen('payment_failed')
+#            except Exception as e:
+#                logging.error("Transaction failed", str(e))
+#                app.changeScreen('payment_failed')
 
 
 
@@ -129,7 +123,7 @@ class Payment(Screen):
         app = App.get_running_app()
 
         # pay.nl communicatie: start transaction
-        pay = PayNL()
+        pay = PayNL(SETTINGS)
         transactionId = pay.payOrder(app.activeOrder)
         logging.debug("TransactionId: %s", transactionId)
 
@@ -214,7 +208,7 @@ class UpgradeWashcardReadCard(Screen):
     def on_enter(self, *args, **kwargs):
         logging.debug("=== Upgrade washcard - read card ===")
         app = App.get_running_app()
-        washcard = Washcard()
+        washcard = Washcard(SETTINGS)
         washcard.readCard()
         if washcard.uid == '':
             app.changeScreen('payment_washcard_card_not_found')
@@ -259,7 +253,7 @@ class UpgradeWashcardPayment(Screen):
         logging.debug(str(app.washcardTopup))
 
         # pay.nl communicatie: start transaction
-        pay = PayNL()
+        pay = PayNL(SETTINGS)
         transactionId = pay.payCardUpgrade(
             app.washcardTopup, app.activeWashcard)
         logging.debug("TransactionId: %s", transactionId)
@@ -311,13 +305,20 @@ class Carwash(App):
     washcardTopup = 0
 
     def build(self):
+        url = f'https://api.washterminalpro.nl/{API_PATH}/login/'
+        response = requests.post(url, json={"username": API_TOKEN, "password": API_SECRET})
+        if response.status_code != 200:
+            response.raise_for_status()
+            
+        responseData = response.json()
+        globals()['JWT_TOKEN'] = responseData["jwt"]
+        globals()['CARWASH_ID'] = responseData["carwash_id"]
+        self.loadSettings()
+        
         Window.rotation = 90  # Rotate the window 90 degrees
         Window.show_cursor = False
         # setup the screens
         Builder.load_file('screens.kv')
-
-        # setup possible uptick based on weekday
-        # self.setUptick()
 
         # setup screens
         self.sm = ScreenManager(transition=NoTransition())
@@ -326,35 +327,41 @@ class Carwash(App):
         self.sm.add_widget(PaymentMethod(name="payment_method"))
         self.sm.add_widget(Payment(name="payment"))
         self.sm.add_widget(PaymentWashcard(name="payment_washcard"))
-        self.sm.add_widget(PaymentWashcardCardNotValid(
-            name="payment_washcard_card_not_valid"))
-        self.sm.add_widget(PaymentWashcardWrongCarwash(
-            name="payment_washcard_wrong_carwash"))
-        self.sm.add_widget(PaymentWashcardCardNotFound(
-            name="payment_washcard_card_not_found"))
-        self.sm.add_widget(PaymentWashcardInsufficientBalance(
-            name="payment_washcard_insufficient_balance"))
+        self.sm.add_widget(PaymentWashcardCardNotValid(name="payment_washcard_card_not_valid"))
+        self.sm.add_widget(PaymentWashcardWrongCarwash(name="payment_washcard_wrong_carwash"))
+        self.sm.add_widget(PaymentWashcardCardNotFound(name="payment_washcard_card_not_found"))
+        self.sm.add_widget(PaymentWashcardInsufficientBalance(name="payment_washcard_insufficient_balance"))
         self.sm.add_widget(PaymentFailed(name="payment_failed"))
         self.sm.add_widget(PaymentSuccess(name="payment_success"))
-        self.sm.add_widget(UpgradeWashcardReadCard(
-            name="upgrade_washcard_read_card"))
-        self.sm.add_widget(UpgradeWashcardChooseAmount(
-            name="upgrade_washcard_choose_amount"))
-        self.sm.add_widget(UpgradeWashcardPayment(
-            name="upgrade_washcard_payment"))
-        self.sm.add_widget(UpgradeWashcardPaymentSuccess(
-            name="upgrade_washcard_payment_success"))
-        self.sm.add_widget(UpgradeWashcardPaymentFailed(
-            name="upgrade_washcard_payment_failed"))
+        self.sm.add_widget(UpgradeWashcardReadCard(name="upgrade_washcard_read_card"))
+        self.sm.add_widget(UpgradeWashcardChooseAmount(name="upgrade_washcard_choose_amount"))
+        self.sm.add_widget(UpgradeWashcardPayment(name="upgrade_washcard_payment"))
+        self.sm.add_widget(UpgradeWashcardPaymentSuccess(name="upgrade_washcard_payment_success"))
+        self.sm.add_widget(UpgradeWashcardPaymentFailed(name="upgrade_washcard_payment_failed"))
         self.sm.add_widget(Error(name="error"))
         self.sm.add_widget(InProgress(name="in_progress"))
         # setup leds
         self.setupIO()
         return self.sm
 
+    def loadSettings(self):
+        url = f'https://api.washterminalpro.nl/{API_PATH}/carwash/{CARWASH_ID}/settings'
+        headers = {"Authorization": f'Bearer {JWT_TOKEN}'}
+        
+        response = requests.get(url, headers=headers)
+        if response.status_code != 200:
+            response.raise_for_status()
+        #print(response.json())
+        globals()['SETTINGS'] = response.json()
+        SETTINGS["general"]["jwtToken"] = JWT_TOKEN
+        SETTINGS["general"]["carwashId"] = CARWASH_ID
+        print(SETTINGS)
+        Logger.setLevel(int(SETTINGS["general"]["logLevel"]))
+        logging.basicConfig(encoding='utf-8', level=int(SETTINGS["general"]["logLevel"]))
+        
     def selectProgram(self, program):
         logging.debug("Program selected: %s", str(program))
-        order = Order(program)
+        order = Order(program, SETTINGS)
         self.activeOrder = order
         self.changeScreen("payment_method")
 
@@ -364,49 +371,46 @@ class Carwash(App):
         arr = list(bin)
         print(arr)
         if int(arr[3]) == 1:
-            GPIO.output(BIT1LED, GPIO.HIGH)
+            GPIO.output(int(SETTINGS["gpio"]["BIT1LED"]), GPIO.HIGH)
         if int(arr[2]) == 1:
-            GPIO.output(BIT2LED, GPIO.HIGH)
+            GPIO.output(int(SETTINGS["gpio"]["BIT2LED"]), GPIO.HIGH)
         if int(arr[1]) == 1:
-            GPIO.output(BIT4LED, GPIO.HIGH)
+            GPIO.output(int(SETTINGS["gpio"]["BIT4LED"]), GPIO.HIGH)
         if int(arr[0]) == 1:
-            GPIO.output(BIT8LED, GPIO.HIGH)
+            GPIO.output(int(SETTINGS["gpio"]["BIT8LED"]), GPIO.HIGH)
         time.sleep(2)
-        GPIO.output(BIT1LED, GPIO.LOW)
-        GPIO.output(BIT2LED, GPIO.LOW)
-        GPIO.output(BIT4LED, GPIO.LOW)
-        GPIO.output(BIT8LED, GPIO.LOW)
+        GPIO.output(int(SETTINGS["gpio"]["BIT1LED"]), GPIO.LOW)
+        GPIO.output(int(SETTINGS["gpio"]["BIT2LED"]), GPIO.LOW)
+        GPIO.output(int(SETTINGS["gpio"]["BIT4LED"]), GPIO.LOW)
+        GPIO.output(int(SETTINGS["gpio"]["BIT8LED"]), GPIO.LOW)
 
     def setupIO(self):
         try:
             GPIO.setmode(GPIO.BCM)
             # LED setup
-            GPIO.setup(ERROR_LED, GPIO.OUT)
-            GPIO.setup(PROGRESS_LED, GPIO.OUT)
+            GPIO.setup(int(SETTINGS["gpio"]["errorLED"]), GPIO.OUT)
+            GPIO.setup(int(SETTINGS["gpio"]["progressLED"]), GPIO.OUT)
             # Machine setup
-            GPIO.setup(BIT1LED, GPIO.OUT)
-            GPIO.setup(BIT2LED, GPIO.OUT)
-            GPIO.setup(BIT4LED, GPIO.OUT)
-            GPIO.setup(BIT8LED, GPIO.OUT)
-            GPIO.output(BIT1LED, GPIO.LOW)
-            GPIO.output(BIT2LED, GPIO.LOW)
-            GPIO.output(BIT4LED, GPIO.LOW)
-            GPIO.output(BIT8LED, GPIO.LOW)
+            GPIO.setup(int(SETTINGS["gpio"]["BIT1LED"]), GPIO.OUT)
+            GPIO.setup(int(SETTINGS["gpio"]["BIT2LED"]), GPIO.OUT)
+            GPIO.setup(int(SETTINGS["gpio"]["BIT4LED"]), GPIO.OUT)
+            GPIO.setup(int(SETTINGS["gpio"]["BIT8LED"]), GPIO.OUT)
+            GPIO.output(int(SETTINGS["gpio"]["BIT1LED"]), GPIO.LOW)
+            GPIO.output(int(SETTINGS["gpio"]["BIT2LED"]), GPIO.LOW)
+            GPIO.output(int(SETTINGS["gpio"]["BIT4LED"]), GPIO.LOW)
+            GPIO.output(int(SETTINGS["gpio"]["BIT8LED"]), GPIO.LOW)
 
             # Input setup
-            GPIO.setup(ERROR_INPUT, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
-            GPIO.setup(PROGRESS_INPUT, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
-            GPIO.setup(HIGH_VEHICLE_INPUT, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+            GPIO.setup(int(SETTINGS["gpio"]["errorInput"]), GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+            GPIO.setup(int(SETTINGS["gpio"]["progressInput"]), GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+            GPIO.setup(int(SETTINGS["gpio"]["highVehicle"]), GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
 
-            logging.debug(str(ERROR_INPUT))
-            logging.debug(str(PROGRESS_INPUT))
-            logging.debug(str(HIGH_VEHICLE_INPUT))
             # Machine in progress/done
-            #GPIO.add_event_detect(PROGRESS_INPUT, GPIO.BOTH, callback=self.progressStatusChanged, bouncetime=300)
+            GPIO.add_event_detect(int(SETTINGS["gpio"]["progressInput"]), GPIO.BOTH, callback=self.progressStatusChanged, bouncetime=300)
             # Error detected/resolved
-            #GPIO.add_event_detect(ERROR_INPUT, GPIO.BOTH, callback=self.errorStatusChanged, bouncetime=300)
+            GPIO.add_event_detect(int(SETTINGS["gpio"]["errorInput"]), GPIO.BOTH, callback=self.errorStatusChanged, bouncetime=300)
             # High vehicle status changed
-            #GPIO.add_event_detect(HIGH_VEHICLE_INPUT, GPIO.BOTH, callback=self.highVehicleStatusChanged, bouncetime=300)
+            GPIO.add_event_detect(int(SETTINGS["gpio"]["highVehicle"]), GPIO.BOTH, callback=self.highVehicleStatusChanged, bouncetime=300)
             logging.debug("GPIO setup completed successfully")
 
         except RuntimeError as e:
@@ -425,7 +429,7 @@ class Carwash(App):
 
     @mainthread
     def progressStatusChanged(self, *args):
-        if GPIO.input(PROGRESS_INPUT):
+        if GPIO.input(int(SETTINGS["gpio"]["progressInput"])):
             logging.debug("Machine in progress...")
             GPIO.output(PROGRESS_LED, GPIO.HIGH)
             self.changeScreen("in_progress")
@@ -437,22 +441,22 @@ class Carwash(App):
 
     @mainthread
     def errorStatusChanged(self, *args):
-        if GPIO.input(ERROR_INPUT):
+        if GPIO.input(int(SETTINGS["gpio"]["errorInput"])):
             logging.debug("Error resolved!")
             # switch on error led
-            GPIO.output(ERROR_LED, GPIO.LOW)
+            GPIO.output(int(SETTINGS["gpio"]["errorLED"]), GPIO.LOW)
             # show program selection screen
             self.changeScreen("program_selection")
         else:
             logging.debug("Error detected!")
             # switch on error led
-            GPIO.output(ERROR_LED, GPIO.HIGH)
+            GPIO.output(int(SETTINGS["gpio"]["errorLED"]), GPIO.HIGH)
             # show error screen
             self.changeScreen("error")
 
     @mainthread
     def highVehicleStatusChanged(self, *args):
-        if GPIO.input(HIGH_VEHICLE_INPUT):
+        if GPIO.input(int(SETTINGS["gpio"]["highVehicle"])):
             logging.debug("High vehicle detected!")
             # show program selection screen for high vehicles
             self.changeScreen("program_selection_high")

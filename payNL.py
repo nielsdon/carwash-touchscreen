@@ -8,18 +8,15 @@ from washingOrder import Order
 
 CONFIG = configparser.ConfigParser()
 CONFIG.read('config.ini')
-logging.basicConfig(
-    encoding='utf-8', level=int(CONFIG.get('General', 'logLevel')))
-
-
 class PayNL():
     transactionStatusUrl = 'https://rest.pay.nl/v2/transactions/%s'
     createTransactionUrl = 'https://rest.pay.nl/v1/transactions'
     cancelTransactionUrl = 'https://rest.pay.nl/v2/transactions/%s/cancel'
 
-    def __init__(self):
-        self.credentials = HTTPBasicAuth(CONFIG.get(
-            'Payment', 'tokenCode'), CONFIG.get('Payment', 'apiToken'))
+    def __init__(self, settings):
+        globals()["SETTINGS"] = settings
+        logging.basicConfig(encoding='utf-8', level=int(SETTINGS["general"]["logLevel"]))
+        self.credentials = HTTPBasicAuth(SETTINGS["paynl"]["tokenCode"], SETTINGS["paynl"]["apiToken"])
         self.headers = {
             "accept": "application/json",
             "content-type": "application/json",
@@ -58,7 +55,7 @@ class PayNL():
             logging.debug('Payment test mode OFF')
         # END TEST MODE
         data = {
-            "serviceId": CONFIG.get('Payment', 'serviceId'),
+            "serviceId": SETTINGS["paynl"]["serviceId"],
             "description": description,
             "reference": reference,
             "returnUrl": "https://demo.pay.nl/complete/",
@@ -68,15 +65,15 @@ class PayNL():
                 "currency": "EUR"
             },
             "paymentMethod": {
-                "id": CONFIG.get('Payment', 'paymentOptionId'),
-                "subId": CONFIG.get('Payment', 'terminalId')
+                "id": SETTINGS["paynl"]["paymentOptionId"],
+                "subId": SETTINGS["paynl"]["terminalId"]
             },
             "integration": {
                 "testMode": False
             },
             "stats": {
                 "info": "Carwash",
-                "tool": "Koni Carwash Terminals",
+                "tool": "WashTerminal Pro",
                 "extra1": extra1,
                 "extra2": extra2
             }

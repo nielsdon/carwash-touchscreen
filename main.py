@@ -26,11 +26,12 @@ os.environ['KIVY_NO_FILELOG'] = '1'  # eliminate file log
 # globals
 CONFIG = configparser.ConfigParser()
 CONFIG.read('config.ini')
-globals()['CARWASH_ID'] = int(CONFIG.get('General', 'carwashId'))
+CARWASH_ID = int(CONFIG.get('General', 'carwashId'))
 API_TOKEN = str(CONFIG.get('General', 'apiToken'))
 API_SECRET = str(CONFIG.get('General', 'apiSecret'))
 TEST_MODE = bool(CONFIG.get('General', 'testMode') == 'True')
-globals()['JWT_TOKEN'] = ''
+JWT_TOKEN = ''
+SETTINGS = {}
 if TEST_MODE:
   API_PATH = 'dev'
 else:
@@ -431,11 +432,11 @@ class Carwash(App):
     def progressStatusChanged(self, *args):
         if GPIO.input(int(SETTINGS["gpio"]["progressInput"])):
             logging.debug("Machine in progress...")
-            GPIO.output(PROGRESS_LED, GPIO.HIGH)
+            GPIO.output(int(SETTINGS["gpio"]["progressLED"]), GPIO.HIGH)
             self.changeScreen("in_progress")
         else:
             logging.debug("Machine done!")
-            GPIO.output(PROGRESS_LED, GPIO.LOW)
+            GPIO.output(int(SETTINGS["gpio"]["progressLED"]), GPIO.LOW)
             # show program selection screen
             self.changeScreen("program_selection")
 

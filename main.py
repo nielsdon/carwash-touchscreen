@@ -406,6 +406,7 @@ class Carwash(App):
 
     def setupIO(self):
         try:
+            GPIO.cleanup()  # Ensure GPIO is cleaned up to reset the state
             GPIO.setmode(GPIO.BCM)
             # LED setup
             GPIO.setup(int(SETTINGS["gpio"]["errorLED"]), GPIO.OUT)

@@ -4,10 +4,10 @@ docutils==0.21.2
 idna==3.7
 Kivy==2.3.0
 Kivy-Garden==0.1.5
-lgpio==0.2.2.0
-marshmallow==2.21.0
-paynlsdk==1.0.3
-Pygments==2.17.2
-requests==2.31.0
-rpi-lgpio==0.5
+marshmallow==3.21.2
+munch==4.0.0
+packaging==24.0
+Pygments==2.18.0
+requests==2.32.2
+RPi.GPIO==0.7.1
 urllib3==2.2.1

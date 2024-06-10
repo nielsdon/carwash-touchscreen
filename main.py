@@ -31,6 +31,7 @@ CARWASH_ID = int(CONFIG.get('General', 'carwashId'))
 API_TOKEN = str(CONFIG.get('General', 'apiToken'))
 API_SECRET = str(CONFIG.get('General', 'apiSecret'))
 TEST_MODE = bool(CONFIG.get('General', 'testMode') == 'True')
+HIGH_VEHICLE = False
 SETTINGS = {}
 JWT_TOKEN = ''
 if TEST_MODE:
@@ -57,6 +58,12 @@ class ProgramSelection(Screen):
         logging.debug("=== Program selection ===")
         # You can optionally call the superclass's method if needed
         super().on_enter(*args, **kwargs)
+        app = App.get_running_app()
+        # Make sure the selection for high vehicles is shown when returning to program selection
+        if HIGH_VEHICLE:
+            logging.debug("High vehicle detected!")
+            # show program selection screen for high vehicles
+            app.changeScreen("program_selection_high")
 
     def selectProgram(self, program):
         app = App.get_running_app()
@@ -471,10 +478,12 @@ class Carwash(App):
     def highVehicleStatusChanged(self, *args):
         if GPIO.input(int(SETTINGS["gpio"]["highVehicle"])):
             logging.debug("High vehicle detected!")
+            HIGH_VEHICLE = True
             # show program selection screen for high vehicles
             self.changeScreen("program_selection_high")
         else:
-            logging.debug("High vehicle removed")
+            logging.debug("High vehicle no longer detected")
+            HIGH_VEHICLE = False
             # show normal program selection screen
             self.changeScreen("program_selection")
 

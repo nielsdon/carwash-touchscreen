@@ -7,13 +7,6 @@ if [ -z "${GITHUB_ACCESS_TOKEN}" ]; then
   exit 1
 fi
 
-# Check if the branch name is provided as an argument
-if [ -z "$1" ]; then
-  echo "Error: No branch name provided."
-  echo "Usage: $0 <branch-name>"
-  exit 1
-fi
-
 # Set the project and branch variables
 project='carwash-touchscreen'
 branch=$1

@@ -38,49 +38,15 @@
   BoxLayout:
     size: root.width, root.height
     orientation: 'vertical'
+    id: selectionLayout
     Image:
       source: 'logo.png'
       size: self.texture_size
-      size_hint_y: 2.5
+      size_hint_y: 2.8
     Label:
       text: " "
       font_size: heading_font_size
-      color: text_color
-    Button:
-      text: "Wasprogramma 1"
-      background_color : button_background_color
-      font_size: default_font_size
-      color: button_text_color
-      on_release:
-        root.selectProgram(1)
-    Button:
-      text: "Wasprogramma 2"
-      background_color : button_background_color
-      font_size: default_font_size
-      color: button_text_color
-      on_release:
-        root.selectProgram(2)
-    Button:
-      text: "Wasprogramma 3"
-      background_color : button_background_color
-      font_size: default_font_size
-      color: button_text_color
-      on_release:
-        root.selectProgram(3)
-    Button:
-      text: "Wasprogramma 4 (Bus)"
-      background_color : button_background_color
-      font_size: default_font_size
-      color: button_text_color
-      on_release:
-        root.selectProgram(4)
-    Button:
-      text: "Waspas opwaarderen"
-      background_color : button_background_color
-      font_size: default_font_size
-      color: button_text_color
-      on_release:
-        root.upgradeWashcard()  
+      color: text_color 
         
 <PaymentMethod>:
   canvas.before:

@@ -6,10 +6,9 @@ import os
 import signal
 import sys
 import time
+from functools import partial
 import requests
 import pigpio
-from functools import partial
-from decimal import Decimal
 
 #import RPi.GPIO as GPIO # type: ignore
 from kivy.app import App

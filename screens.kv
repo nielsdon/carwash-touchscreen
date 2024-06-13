@@ -80,7 +80,13 @@
       color: button_text_color
       on_release:
         root.selectWashcard()
-        
+    Button:
+      text: "Annuleren"
+      background_color : button_background_color
+      font_size: default_font_size
+      color: button_text_color
+      on_release:
+        root.cancel()        
 <Payment>:
   canvas.before:
     Rectangle:

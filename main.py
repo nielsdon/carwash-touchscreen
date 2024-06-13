@@ -7,10 +7,11 @@ import signal
 import sys
 import time
 import requests
+import pigpio
 from functools import partial
 from decimal import Decimal
 
-import RPi.GPIO as GPIO # type: ignore
+#import RPi.GPIO as GPIO # type: ignore
 from kivy.app import App
 from kivy.clock import Clock, mainthread
 from kivy.lang import Builder
@@ -31,9 +32,12 @@ CARWASH_ID = int(CONFIG.get('General', 'carwashId'))
 API_TOKEN = str(CONFIG.get('General', 'apiToken'))
 API_SECRET = str(CONFIG.get('General', 'apiSecret'))
 TEST_MODE = bool(CONFIG.get('General', 'testMode') == 'True')
-HIGH_VEHICLE = False
 SETTINGS = {}
 JWT_TOKEN = ''
+pi = pigpio.pi()
+if not pi.connected:
+    exit()
+    
 if TEST_MODE:
   API_PATH = 'dev'
 else:
@@ -44,11 +48,14 @@ locale.setlocale(locale.LC_ALL, 'nl_NL.UTF-8')
 class ProgramSelection(Screen):
     def __init__(self, **kwargs):
         super(ProgramSelection, self).__init__(**kwargs)
+        app = App.get_running_app()
         layout = self.ids.selectionLayout
-        for idx, data in enumerate(SETTINGS["general"]["prices"], start=0):
-            if(idx > 0):
-                btn = Button(text="Wasprogramma %s" % str(idx), background_color=[0.21,0.69,0.94,1], font_size="42sp", color=[1,1,1,1])
-                btn.bind(on_release=lambda instance: self.selectProgram(idx))
+        for idx, data in enumerate(SETTINGS["prices"], start=0):
+            if 'WASH' in data:
+                counter = idx + 1
+                btn = Button(text="Wasprogramma %s" % str(counter), background_color=[0.21,0.69,0.94,1], font_size="42sp", color=[1,1,1,1])
+                print("Wasprogramma %s" % str(counter))
+                btn.bind(on_release=lambda instance, counter=counter: self.selectProgram(counter))
                 layout.add_widget(btn)
         btn = Button(text="Waspas opwaarderen", background_color=[0.21,0.69,0.94,1], font_size="42sp", color=[1,1,1,1])
         btn.bind(on_release=lambda instance: self.upgradeWashcard())
@@ -60,7 +67,7 @@ class ProgramSelection(Screen):
         super().on_enter(*args, **kwargs)
         app = App.get_running_app()
         # Make sure the selection for high vehicles is shown when returning to program selection
-        if HIGH_VEHICLE:
+        if app.HIGH_VEHICLE:
             logging.debug("High vehicle detected!")
             # show program selection screen for high vehicles
             app.changeScreen("program_selection_high")
@@ -159,6 +166,10 @@ class Payment(Screen):
         # timeout is reached or status is no longer PENDING
         if transactionStatus == 'PAID':
             logging.debug('betaling gelukt!')
+            # log the transaction
+            washcard = Washcard(SETTINGS)
+            response = washcard.pay(app.activeOrder)
+            logging.debug(response)
             app.changeScreen('payment_success')
         else:
             logging.debug('fout bij betaling')
@@ -183,7 +194,6 @@ class PaymentSuccess(Screen):
         app = App.get_running_app()
         app.startMachine()
         if TEST_MODE:
-            app = App.get_running_app()
             time.sleep(3)
             app.changeScreen('program_selection')
 
@@ -323,6 +333,7 @@ class Carwash(App):
     activeOrder = ''
     activeWashcard = ''
     washcardTopup = 0
+    HIGH_VEHICLE = False
 
     def build(self):
         url = f'https://api.washterminalpro.nl/{API_PATH}/login/'
@@ -331,10 +342,10 @@ class Carwash(App):
             response.raise_for_status()
             
         responseData = response.json()
+        print(responseData)
         globals()['JWT_TOKEN'] = responseData["jwt"]
         globals()['CARWASH_ID'] = responseData["carwash_id"]
         self.loadSettings()
-        
         Window.rotation = 90  # Rotate the window 90 degrees
         Window.show_cursor = False
         # setup the screens
@@ -391,57 +402,57 @@ class Carwash(App):
         arr = list(bin)
         print(arr)
         if int(arr[3]) == 1:
-            GPIO.output(int(SETTINGS["gpio"]["BIT1LED"]), GPIO.HIGH)
+            pi.write(int(SETTINGS["gpio"]["BIT1LED"]), 1)
         if int(arr[2]) == 1:
-            GPIO.output(int(SETTINGS["gpio"]["BIT2LED"]), GPIO.HIGH)
+            pi.write(int(SETTINGS["gpio"]["BIT2LED"]), 1)
         if int(arr[1]) == 1:
-            GPIO.output(int(SETTINGS["gpio"]["BIT4LED"]), GPIO.HIGH)
+            pi.write(int(SETTINGS["gpio"]["BIT4LED"]), 1)
         if int(arr[0]) == 1:
-            GPIO.output(int(SETTINGS["gpio"]["BIT8LED"]), GPIO.HIGH)
+            pi.write(int(SETTINGS["gpio"]["BIT8LED"]), 1)
         time.sleep(2)
-        GPIO.output(int(SETTINGS["gpio"]["BIT1LED"]), GPIO.LOW)
-        GPIO.output(int(SETTINGS["gpio"]["BIT2LED"]), GPIO.LOW)
-        GPIO.output(int(SETTINGS["gpio"]["BIT4LED"]), GPIO.LOW)
-        GPIO.output(int(SETTINGS["gpio"]["BIT8LED"]), GPIO.LOW)
+        pi.write(int(SETTINGS["gpio"]["BIT1LED"]), 0)
+        pi.write(int(SETTINGS["gpio"]["BIT2LED"]), 0)
+        pi.write(int(SETTINGS["gpio"]["BIT4LED"]), 0)
+        pi.write(int(SETTINGS["gpio"]["BIT8LED"]), 0)
 
     def setupIO(self):
         try:
-            GPIO.cleanup()  # Ensure GPIO is cleaned up to reset the state
-            GPIO.setmode(GPIO.BCM)
+
+            if not pi.connected:
+                exit()
             # LED setup
-            GPIO.setup(int(SETTINGS["gpio"]["errorLED"]), GPIO.OUT)
-            GPIO.setup(int(SETTINGS["gpio"]["progressLED"]), GPIO.OUT)
+            pi.set_mode(int(SETTINGS["gpio"]["errorLED"]), pigpio.OUTPUT)
+            pi.set_mode(int(SETTINGS["gpio"]["progressLED"]), pigpio.OUTPUT)
             # Machine setup
-            GPIO.setup(int(SETTINGS["gpio"]["BIT1LED"]), GPIO.OUT)
-            GPIO.setup(int(SETTINGS["gpio"]["BIT2LED"]), GPIO.OUT)
-            GPIO.setup(int(SETTINGS["gpio"]["BIT4LED"]), GPIO.OUT)
-            GPIO.setup(int(SETTINGS["gpio"]["BIT8LED"]), GPIO.OUT)
-            GPIO.output(int(SETTINGS["gpio"]["BIT1LED"]), GPIO.LOW)
-            GPIO.output(int(SETTINGS["gpio"]["BIT2LED"]), GPIO.LOW)
-            GPIO.output(int(SETTINGS["gpio"]["BIT4LED"]), GPIO.LOW)
-            GPIO.output(int(SETTINGS["gpio"]["BIT8LED"]), GPIO.LOW)
+            pi.set_mode(int(SETTINGS["gpio"]["BIT1LED"]), pigpio.OUTPUT)
+            pi.set_mode(int(SETTINGS["gpio"]["BIT2LED"]), pigpio.OUTPUT)
+            pi.set_mode(int(SETTINGS["gpio"]["BIT4LED"]), pigpio.OUTPUT)
+            pi.set_mode(int(SETTINGS["gpio"]["BIT8LED"]), pigpio.OUTPUT)
+            pi.write(int(SETTINGS["gpio"]["BIT1LED"]), 0)
+            pi.write(int(SETTINGS["gpio"]["BIT2LED"]), 0)
+            pi.write(int(SETTINGS["gpio"]["BIT4LED"]), 0)
+            pi.write(int(SETTINGS["gpio"]["BIT8LED"]), 0)
 
             # Input setup
-            GPIO.setup(int(SETTINGS["gpio"]["errorInput"]), GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
-            GPIO.setup(int(SETTINGS["gpio"]["progressInput"]), GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
-            GPIO.setup(int(SETTINGS["gpio"]["highVehicle"]), GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+            logging.debug("Inputs: %s %s %s" % (SETTINGS["gpio"]["errorInput"],SETTINGS["gpio"]["progressInput"],SETTINGS["gpio"]["highVehicle"]) )
+            pi.set_pull_up_down(int(SETTINGS["gpio"]["errorInput"]), pigpio.PUD_UP)
+            pi.set_pull_up_down(int(SETTINGS["gpio"]["progressInput"]), pigpio.PUD_DOWN)
+            pi.set_pull_up_down(int(SETTINGS["gpio"]["highVehicle"]), pigpio.PUD_DOWN)
 
             # Machine in progress/done
-            GPIO.add_event_detect(int(SETTINGS["gpio"]["progressInput"]), GPIO.BOTH, callback=self.progressStatusChanged, bouncetime=300)
-            # Error detected/resolved
-            GPIO.add_event_detect(int(SETTINGS["gpio"]["errorInput"]), GPIO.BOTH, callback=self.errorStatusChanged, bouncetime=300)
-            # High vehicle status changed
-            GPIO.add_event_detect(int(SETTINGS["gpio"]["highVehicle"]), GPIO.BOTH, callback=self.highVehicleStatusChanged, bouncetime=300)
+            pi.callback(int(SETTINGS["gpio"]["progressInput"]), pigpio.EITHER_EDGE, self.progressStatusChanged)
+            pi.callback(int(SETTINGS["gpio"]["errorInput"]), pigpio.EITHER_EDGE, self.errorStatusChanged)
+            pi.callback(int(SETTINGS["gpio"]["highVehicle"]), pigpio.EITHER_EDGE, self.highVehicleStatusChanged)
             logging.debug("GPIO setup completed successfully")
 
         except RuntimeError as e:
             logging.error("RuntimeError during GPIO setup: %s", e)
-            GPIO.cleanup()  # Ensure GPIO is cleaned up to reset the state
+            pi.stop()
             raise
 
         except Exception as e:
             logging.error("Unexpected error during GPIO setup: %s", e)
-            GPIO.cleanup()  # Ensure GPIO is cleaned up to reset the state
+            pi.stop()
             raise
 
     def changeScreen(self, screenName, *args):
@@ -450,47 +461,47 @@ class Carwash(App):
 
     @mainthread
     def progressStatusChanged(self, *args):
-        if GPIO.input(int(SETTINGS["gpio"]["progressInput"])):
+        if pi.read(int(SETTINGS["gpio"]["progressInput"])):
             logging.debug("Machine in progress...")
-            GPIO.output(int(SETTINGS["gpio"]["progressLED"]), GPIO.HIGH)
+            pi.write(int(SETTINGS["gpio"]["progressLED"]), 1)
             self.changeScreen("in_progress")
         else:
             logging.debug("Machine done!")
-            GPIO.output(int(SETTINGS["gpio"]["progressLED"]), GPIO.LOW)
+            pi.write(int(SETTINGS["gpio"]["progressLED"]), 0)
             # show program selection screen
             self.changeScreen("program_selection")
 
     @mainthread
     def errorStatusChanged(self, *args):
-        if GPIO.input(int(SETTINGS["gpio"]["errorInput"])):
+        if pi.read(int(SETTINGS["gpio"]["errorInput"])):
             logging.debug("Error resolved!")
             # switch on error led
-            GPIO.output(int(SETTINGS["gpio"]["errorLED"]), GPIO.LOW)
+            pi.write(int(SETTINGS["gpio"]["errorLED"]), 0)
             # show program selection screen
             self.changeScreen("program_selection")
         else:
             logging.debug("Error detected!")
             # switch on error led
-            GPIO.output(int(SETTINGS["gpio"]["errorLED"]), GPIO.HIGH)
+            pi.write(int(SETTINGS["gpio"]["errorLED"]), 1)
             # show error screen
             self.changeScreen("error")
 
     @mainthread
     def highVehicleStatusChanged(self, *args):
-        if GPIO.input(int(SETTINGS["gpio"]["highVehicle"])):
+        if pi.read(int(SETTINGS["gpio"]["highVehicle"])):
             logging.debug("High vehicle detected!")
-            HIGH_VEHICLE = True
+            self.HIGH_VEHICLE = True
             # show program selection screen for high vehicles
             self.changeScreen("program_selection_high")
         else:
             logging.debug("High vehicle no longer detected")
-            HIGH_VEHICLE = False
+            self.HIGH_VEHICLE = False
             # show normal program selection screen
             self.changeScreen("program_selection")
 
 def signal_handler(sig, frame):
     logging.debug("Cleaning up GPIO ports")
-    GPIO.cleanup()
+    pi.stop()
     logging.debug("Exiting....")
     sys.exit(0)
 

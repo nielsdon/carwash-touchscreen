@@ -8,6 +8,7 @@ CONFIG.read('config.ini')
 class Order():
   program = 0
   description = ''
+  transaction_type = ''  
   price = 0
   id = 0
   
@@ -16,9 +17,8 @@ class Order():
       globals()["SETTINGS"] = settings
       logging.basicConfig(encoding='utf-8', level=int(SETTINGS["general"]["logLevel"]))
       self.description = "Wasprogramma " +str(program)
-      prices = SETTINGS["general"]["prices"]
-      self.amount = float(prices[program])    
-        
+      self.transaction_type = 'WASH_' +str(program)
+      self.amount = float(SETTINGS["prices"][self.transaction_type])    
       #determine order ID
       try:
           file = open('orderId.txt', 'r+')

@@ -84,11 +84,7 @@ class Washcard():
 
     def pay(self, order):
         logging.debug('Paying order %s', order.description)
-        if self.uid == '':
-            logging.debug('no active card')
-            return 2  # no active card
-
-        response = self.startTransaction(order.amount*-1, order.description, 'WASH')
+        response = self.startTransaction(order.amount*-1, order.description, order.transaction_type)
         return response
 
     def upgrade(self, amount):

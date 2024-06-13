@@ -16,8 +16,8 @@ class Order():
       globals()["SETTINGS"] = settings
       logging.basicConfig(encoding='utf-8', level=int(SETTINGS["general"]["logLevel"]))
       self.description = "Wasprogramma " +str(program)
-      prices = SETTINGS["general"]["prices"]
-      self.amount = float(prices[program])    
+      prices = SETTINGS["prices"]
+      self.amount = float(prices['WASH_' +str(program)])    
         
       #determine order ID
       try:

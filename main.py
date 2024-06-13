@@ -6,9 +6,10 @@ import os
 import signal
 import sys
 import time
-from functools import partial
 import requests
 import pigpio
+from functools import partial
+from decimal import Decimal
 
 #import RPi.GPIO as GPIO # type: ignore
 from kivy.app import App
@@ -31,7 +32,6 @@ CARWASH_ID = int(CONFIG.get('General', 'carwashId'))
 API_TOKEN = str(CONFIG.get('General', 'apiToken'))
 API_SECRET = str(CONFIG.get('General', 'apiSecret'))
 TEST_MODE = bool(CONFIG.get('General', 'testMode') == 'True')
-HIGH_VEHICLE = False
 SETTINGS = {}
 JWT_TOKEN = ''
 pi = pigpio.pi()
@@ -48,11 +48,13 @@ locale.setlocale(locale.LC_ALL, 'nl_NL.UTF-8')
 class ProgramSelection(Screen):
     def __init__(self, **kwargs):
         super(ProgramSelection, self).__init__(**kwargs)
+        app = App.get_running_app()
         layout = self.ids.selectionLayout
-        for idx, data in enumerate(SETTINGS["general"]["prices"], start=0):
-            if(idx > 0):
-                btn = Button(text="Wasprogramma %s" % str(idx), background_color=[0.21,0.69,0.94,1], font_size="42sp", color=[1,1,1,1])
-                btn.bind(on_release=lambda instance: self.selectProgram(idx))
+        for idx, data in enumerate(SETTINGS["prices"], start=0):
+            if(data.__contains__('WASH')):
+                counter = idx + 1
+                btn = Button(text="Wasprogramma %s" % str(counter), background_color=[0.21,0.69,0.94,1], font_size="42sp", color=[1,1,1,1])
+                btn.bind(on_release=lambda instance: self.selectProgram(counter))
                 layout.add_widget(btn)
         btn = Button(text="Waspas opwaarderen", background_color=[0.21,0.69,0.94,1], font_size="42sp", color=[1,1,1,1])
         btn.bind(on_release=lambda instance: self.upgradeWashcard())
@@ -64,7 +66,7 @@ class ProgramSelection(Screen):
         super().on_enter(*args, **kwargs)
         app = App.get_running_app()
         # Make sure the selection for high vehicles is shown when returning to program selection
-        if HIGH_VEHICLE:
+        if app.HIGH_VEHICLE:
             logging.debug("High vehicle detected!")
             # show program selection screen for high vehicles
             app.changeScreen("program_selection_high")
@@ -187,7 +189,6 @@ class PaymentSuccess(Screen):
         app = App.get_running_app()
         app.startMachine()
         if TEST_MODE:
-            app = App.get_running_app()
             time.sleep(3)
             app.changeScreen('program_selection')
 
@@ -327,6 +328,7 @@ class Carwash(App):
     activeOrder = ''
     activeWashcard = ''
     washcardTopup = 0
+    HIGH_VEHICLE = False
 
     def build(self):
         url = f'https://api.washterminalpro.nl/{API_PATH}/login/'
@@ -338,7 +340,6 @@ class Carwash(App):
         globals()['JWT_TOKEN'] = responseData["jwt"]
         globals()['CARWASH_ID'] = responseData["carwash_id"]
         self.loadSettings()
-        
         Window.rotation = 90  # Rotate the window 90 degrees
         Window.show_cursor = False
         # setup the screens
@@ -483,12 +484,12 @@ class Carwash(App):
     def highVehicleStatusChanged(self, *args):
         if pi.read(int(SETTINGS["gpio"]["highVehicle"])):
             logging.debug("High vehicle detected!")
-            HIGH_VEHICLE = True
+            self.HIGH_VEHICLE = True
             # show program selection screen for high vehicles
             self.changeScreen("program_selection_high")
         else:
             logging.debug("High vehicle no longer detected")
-            HIGH_VEHICLE = False
+            self.HIGH_VEHICLE = False
             # show normal program selection screen
             self.changeScreen("program_selection")
 

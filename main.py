@@ -166,6 +166,10 @@ class Payment(Screen):
         # timeout is reached or status is no longer PENDING
         if transactionStatus == 'PAID':
             logging.debug('betaling gelukt!')
+            # log the transaction
+            washcard = Washcard(SETTINGS)
+            response = washcard.pay(app.activeOrder)
+            logging.debug(response)
             app.changeScreen('payment_success')
         else:
             logging.debug('fout bij betaling')

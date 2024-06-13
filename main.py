@@ -51,10 +51,11 @@ class ProgramSelection(Screen):
         app = App.get_running_app()
         layout = self.ids.selectionLayout
         for idx, data in enumerate(SETTINGS["prices"], start=0):
-            if(data.__contains__('WASH')):
+            if 'WASH' in data:
                 counter = idx + 1
                 btn = Button(text="Wasprogramma %s" % str(counter), background_color=[0.21,0.69,0.94,1], font_size="42sp", color=[1,1,1,1])
-                btn.bind(on_release=lambda instance: self.selectProgram(counter))
+                print("Wasprogramma %s" % str(counter))
+                btn.bind(on_release=lambda instance, counter=counter: self.selectProgram(counter))
                 layout.add_widget(btn)
         btn = Button(text="Waspas opwaarderen", background_color=[0.21,0.69,0.94,1], font_size="42sp", color=[1,1,1,1])
         btn.bind(on_release=lambda instance: self.upgradeWashcard())
@@ -337,6 +338,7 @@ class Carwash(App):
             response.raise_for_status()
             
         responseData = response.json()
+        print(responseData)
         globals()['JWT_TOKEN'] = responseData["jwt"]
         globals()['CARWASH_ID'] = responseData["carwash_id"]
         self.loadSettings()

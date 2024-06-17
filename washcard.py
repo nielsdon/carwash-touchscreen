@@ -3,7 +3,6 @@ API is located at api.washterminalpro.nl"""
 import configparser
 import json
 import logging
-import subprocess
 import requests
 import evdev
 from munch import munchify
@@ -12,7 +11,6 @@ from requests.auth import HTTPBasicAuth
 CONFIG = configparser.ConfigParser()
 CONFIG.read('config.ini')
 API_URL = 'https://api.washterminalpro.nl'
-SETTINGS = {}
 if CONFIG.get('General','testMode') == 'True':
     API_PATH = '/dev'
 else:
@@ -22,6 +20,7 @@ class Washcard():
     cardInfoUrl = API_URL +API_PATH +'/card/%s'
     cardBalanceUrl = API_URL +API_PATH +'/card/%s/balance'
     cardTransactionUrl = API_URL +API_PATH +'/transaction/start'
+    SETTINGS = {}
     id = 0
     uid = ''
     balance = 0
@@ -29,13 +28,12 @@ class Washcard():
     carwash = ''
 
     def __init__(self, settings):
-        globals()["SETTINGS"] = settings
-        JWT_TOKEN = SETTINGS["general"]["jwtToken"]
-        logging.basicConfig(encoding='utf-8', level=int(SETTINGS["general"]["logLevel"]))
+        self.SETTINGS = settings
+        logging.basicConfig(encoding='utf-8', level=int(self.SETTINGS["general"]["logLevel"]))
         self.headers = {
             "accept": "application/json",
             "content-type": "application/json",
-            "Authorization": f'Bearer {JWT_TOKEN}'
+            "Authorization": f'Bearer {self.SETTINGS["general"]["jwtToken"]}'
         }
         
     def loadInfo(self):
@@ -118,7 +116,7 @@ class Washcard():
         logging.debug("Waiting for NFC UID...")
         
         # Specify the path to the input device
-        input_device_path = SETTINGS["general"]["nfcReader"]  # Replace 'eventX' with the correct event number
+        input_device_path = self.SETTINGS["general"]["nfcReader"]  # Replace 'eventX' with the correct event number
         
         # Create an instance of the InputDevice class
         device = evdev.InputDevice(input_device_path)

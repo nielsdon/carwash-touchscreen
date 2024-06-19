@@ -143,18 +143,18 @@ class Carwash(App):
         arr = list(bin)
         print(arr)
         if int(arr[3]) == 1:
-            pi.write(int(self.SETTINGS["gpio"]["BIT1LED"]), 1)
+            pi.write(int(self.SETTINGS["gpio"]["BIT1LED"]),0)
         if int(arr[2]) == 1:
-            pi.write(int(self.SETTINGS["gpio"]["BIT2LED"]), 1)
+            pi.write(int(self.SETTINGS["gpio"]["BIT2LED"]),0)
         if int(arr[1]) == 1:
-            pi.write(int(self.SETTINGS["gpio"]["BIT4LED"]), 1)
+            pi.write(int(self.SETTINGS["gpio"]["BIT4LED"]),0)
         if int(arr[0]) == 1:
-            pi.write(int(self.SETTINGS["gpio"]["BIT8LED"]), 1)
+            pi.write(int(self.SETTINGS["gpio"]["BIT8LED"]),0)
         time.sleep(2)
-        pi.write(int(self.SETTINGS["gpio"]["BIT1LED"]), 0)
-        pi.write(int(self.SETTINGS["gpio"]["BIT2LED"]), 0)
-        pi.write(int(self.SETTINGS["gpio"]["BIT4LED"]), 0)
-        pi.write(int(self.SETTINGS["gpio"]["BIT8LED"]), 0)
+        pi.write(int(self.SETTINGS["gpio"]["BIT1LED"]),1)
+        pi.write(int(self.SETTINGS["gpio"]["BIT2LED"]),1)
+        pi.write(int(self.SETTINGS["gpio"]["BIT4LED"]),1)
+        pi.write(int(self.SETTINGS["gpio"]["BIT8LED"]),1)
 
     def setupIO(self):
         try:
@@ -168,10 +168,10 @@ class Carwash(App):
             pi.set_mode(int(self.SETTINGS["gpio"]["BIT2LED"]), pigpio.OUTPUT)
             pi.set_mode(int(self.SETTINGS["gpio"]["BIT4LED"]), pigpio.OUTPUT)
             pi.set_mode(int(self.SETTINGS["gpio"]["BIT8LED"]), pigpio.OUTPUT)
-            pi.write(int(self.SETTINGS["gpio"]["BIT1LED"]), 0)
-            pi.write(int(self.SETTINGS["gpio"]["BIT2LED"]), 0)
-            pi.write(int(self.SETTINGS["gpio"]["BIT4LED"]), 0)
-            pi.write(int(self.SETTINGS["gpio"]["BIT8LED"]), 0)
+            pi.write(int(self.SETTINGS["gpio"]["BIT1LED"]), 1)
+            pi.write(int(self.SETTINGS["gpio"]["BIT2LED"]), 1)
+            pi.write(int(self.SETTINGS["gpio"]["BIT4LED"]), 1)
+            pi.write(int(self.SETTINGS["gpio"]["BIT8LED"]), 1)
 
             # Input setup
             logging.debug("Inputs: %s %s %s" % (self.SETTINGS["gpio"]["errorInput"],self.SETTINGS["gpio"]["progressInput"],self.SETTINGS["gpio"]["highVehicle"]) )

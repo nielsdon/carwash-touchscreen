@@ -1,6 +1,7 @@
 """A Helper class to structure the washing orders"""
 import configparser
 import logging
+from datetime import datetime
 
 CONFIG = configparser.ConfigParser()
 CONFIG.read('config.ini')
@@ -18,7 +19,21 @@ class Order():
       logging.basicConfig(encoding='utf-8', level=int(SETTINGS["general"]["logLevel"]))
       self.description = "Wasprogramma " +str(program)
       self.transaction_type = 'WASH_' +str(program)
-      self.amount = float(SETTINGS["prices"][self.transaction_type])    
+      #additional price for manned days
+      uptick = 0
+      if "mannedDays" in SETTINGS["general"]:
+          now = datetime.now()
+          # Get the weekday number (0 = Monday, 1 = Tuesday, ..., 6 = Sunday)
+          weekday_number = now.weekday()
+          logging.info("Manned days applicable, checking if today is manned day...")
+          if weekday_number in SETTINGS["general"]["mannedDays"]:
+              uptick = SETTINGS["general"]["mannedUptick"]
+              logging.info("Yes: Uptick is €%s", str(uptick))
+          else:
+              logging.info("Nope!")
+      else:
+          logging.info("No uptick today")
+      self.amount = float(SETTINGS["prices"][self.transaction_type]) + float(uptick)
       #determine order ID
       try:
           file = open('orderId.txt', 'r+')

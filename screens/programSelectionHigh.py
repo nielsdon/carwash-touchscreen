@@ -1,4 +1,6 @@
 from kivy.uix.screenmanager import Screen
+from kivy.app import App
+import logging
 
 class ProgramSelectionHigh(Screen):
     def on_enter(self, *args, **kwargs):

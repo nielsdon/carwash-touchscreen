@@ -1,8 +1,8 @@
 #:set default_font_size "42sp"
 #:set heading_font_size "60sp"
 #:set text_color 0.15,0.45,0.73,1
-#:set button_background_color 0.21,0.69,0.94,1
-#:set button_text_color 1,1,1,1
+#:set button_background_color 0,0,0,1
+#:set button_text_color 1,1,0,1
 #:set background_color 1,1,1,1
 #:set error_color 1,0,0,1
 
@@ -39,10 +39,21 @@
     size: root.width, root.height
     orientation: 'vertical'
     id: selectionLayout
-    Image:
-      source: 'logo.png'
-      size: self.texture_size
-      size_hint_y: 2.8
+    RelativeLayout:  # Use RelativeLayout to position elements freely
+      Image:
+        source: 'logo.png'
+        size: self.texture_size
+        size_hint_y: 2.8
+        pos_hint: {'center_x': 0.5, 'top': 1.4}  # Center horizontally, top of parent
+      # Conditional label
+      Label:
+        id: test_label
+        text: "TEST"
+        font_size: '20sp'
+        color: 1, 0, 0, 1  # Red color
+        size_hint: None, None
+        size: self.texture_size
+        pos_hint: {'x': 0, 'top': 1.0}  # Position top-left corner
     Label:
       text: " "
       font_size: heading_font_size

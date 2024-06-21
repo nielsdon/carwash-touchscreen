@@ -20,6 +20,8 @@ from upgradeWashcardPayment import UpgradeWashcardPayment
 from upgradeWashcardPaymentFailed import UpgradeWashcardPaymentFailed
 from upgradeWashcardPaymentSuccess import UpgradeWashcardPaymentSuccess
 from upgradeWashcardReadCard import UpgradeWashcardReadCard
+from kivy.uix.label import Label
+from kivy.graphics import Color, Rectangle
 from washingOrder import Order
 
 import configparser
@@ -35,8 +37,6 @@ from kivy.lang import Builder
 from kivy.core.window import Window
 from kivy.logger import Logger
 from kivy.uix.screenmanager import NoTransition, ScreenManager
-
-
 
 os.environ['KIVY_NO_FILELOG'] = '1'  # eliminate file log
 # globals
@@ -125,8 +125,9 @@ class Carwash(App):
             response.raise_for_status()
         #print(response.json())
         self.SETTINGS = response.json()
-        self.SETTINGS["general"]["jwtToken"] = JWT_TOKEN
-        self.SETTINGS["general"]["carwashId"] = CARWASH_ID
+        if "general" in self.SETTINGS:
+            self.SETTINGS["general"]["jwtToken"] = JWT_TOKEN
+            self.SETTINGS["general"]["carwashId"] = CARWASH_ID
         print(self.SETTINGS)
         Logger.setLevel(int(self.SETTINGS["general"]["logLevel"]))
         logging.basicConfig(encoding='utf-8', level=int(self.SETTINGS["general"]["logLevel"]))

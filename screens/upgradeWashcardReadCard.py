@@ -1,12 +1,13 @@
-from kivy.uix.screenmanager import Screen
-from washcard import Washcard
-from kivy.app import App
 import logging
 import locale
+from kivy.uix.screenmanager import Screen
+from kivy.app import App
+from washcard import Washcard
 
 class UpgradeWashcardReadCard(Screen):
+    """ Reading the card and loading the info """
     SETTINGS = {}
-    
+
     def __init__(self, **kwargs):
         self.SETTINGS = kwargs.pop('settings', None)
         super(UpgradeWashcardReadCard, self).__init__(**kwargs)
@@ -20,7 +21,7 @@ class UpgradeWashcardReadCard(Screen):
             app.changeScreen('payment_washcard_card_not_found')
         elif washcard.carwash == '':
             app.changeScreen('payment_washcard_card_not_valid')
-        elif  washcard.balance is None:
+        elif washcard.credit == 1:
             app.changeScreen('upgrade_washcard_credit')
         elif int(washcard.carwash.id) != app.CARWASH_ID:
             logging.debug('Washcard carwash_id: %s', str(washcard.carwash.id))

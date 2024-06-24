@@ -26,6 +26,7 @@ class Washcard():
     balance = 0
     company = ''
     carwash = ''
+    credit = 0
 
     def __init__(self, settings):
         self.SETTINGS = settings
@@ -61,6 +62,7 @@ class Washcard():
         })
         self.balance = info.balance
         self.id = info.id
+        self.credit = info.credit
         return True
 
     def getInfo(self):

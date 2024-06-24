@@ -1,7 +1,5 @@
 #:set default_font_size "42sp"
 #:set heading_font_size "60sp"
-#:set text_color 0.15,0.45,0.73,1
-#:set background_color 1,1,1,1
 #:set error_color 1,0,0,1
 
 <ProgramSelectionHigh>:
@@ -38,7 +36,7 @@
       pos: self.pos
       size: self.size
     Color:
-      rgba: background_color
+      rgba: app.backgroundColor
   BoxLayout:
     size: root.width, root.height
     orientation: 'vertical'
@@ -62,7 +60,7 @@
     Label:
       text: " "
       font_size: heading_font_size
-      color: text_color 
+      color: app.textColor 
         
 <PaymentMethod>:
   canvas.before:
@@ -70,7 +68,7 @@
       pos: self.pos
       size: self.size
     Color:
-      rgba: background_color
+      rgba: app.backgroundColor
   BoxLayout:
     size: root.width, root.height
     orientation: 'vertical'
@@ -81,7 +79,7 @@
     Label:
       text: "Kies betaalmethode"
       font_size: heading_font_size
-      color: text_color
+      color: app.textColor
     Button:
       text: "PIN"
       background_color : app.buttonBackgroundColor
@@ -109,7 +107,7 @@
       pos: self.pos
       size: self.size
     Color:
-      rgba: background_color
+      rgba: app.backgroundColor
   BoxLayout:
     size: root.width, root.height
     orientation: 'vertical'
@@ -120,7 +118,7 @@
     Label:
       text: "Voltooi betaling\nop PIN terminal"
       font_size: heading_font_size
-      color: text_color
+      color: app.textColor
 
 <PaymentWashcard>:
   canvas.before:
@@ -128,7 +126,7 @@
       pos: self.pos
       size: self.size
     Color:
-      rgba: background_color
+      rgba: app.backgroundColor
   BoxLayout:
     size: root.width, root.height
     orientation: 'vertical'
@@ -139,7 +137,7 @@
     Label:
       text: "Houd waspas voor\nde lezer"
       font_size: heading_font_size
-      color: text_color
+      color: app.textColor
       
 <UpgradeWashcardReadCard>:
   canvas.before:
@@ -147,7 +145,7 @@
       pos: self.pos
       size: self.size
     Color:
-      rgba: background_color
+      rgba: app.backgroundColor
   BoxLayout:
     size: root.width, root.height
     orientation: 'vertical'
@@ -158,7 +156,7 @@
     Label:
       text: "Houd de waspas\nvoor de lezer"
       font_size: heading_font_size
-      color: text_color
+      color: app.textColor
 
 <UpgradeWashcardChooseAmount>:
   canvas.before:
@@ -166,7 +164,7 @@
       pos: self.pos
       size: self.size
     Color:
-      rgba: background_color
+      rgba: app.backgroundColor
   BoxLayout:
     size: root.width, root.height
     orientation: 'vertical'
@@ -175,44 +173,44 @@
       halign: 'left'
       text_size: self.size
       font_size: heading_font_size
-      color: text_color
+      color: app.textColor
     Label:
       id: lbl_balance
       halign: 'left'
       text_size: self.size
       text: '----'
       font_size: heading_font_size
-      color: text_color
+      color: app.textColor
     Label:
       text: "Wasstraat info"
       halign: 'left'
       text_size: self.size
       font_size: heading_font_size
-      color: text_color
+      color: app.textColor
     Label:
       id: lbl_carwash
       halign: 'left'
       text_size: self.size
       text: "----"
       font_size: default_font_size
-      color: text_color
+      color: app.textColor
     Label:
       text: "Bedrijfsinfo"
       halign: 'left'
       text_size: self.size
       font_size: heading_font_size
-      color: text_color
+      color: app.textColor
     Label:
       id: lbl_company
       halign: 'left'
       text_size: self.size
       text: "----"
       font_size: default_font_size
-      color: text_color  
+      color: app.textColor  
     Label:
       text: "Kies bedrag"
       font_size: heading_font_size
-      color: text_color
+      color: app.textColor
     BoxLayout:
       size: root.width, root.height
       orientation: 'horizontal'
@@ -261,7 +259,7 @@
       pos: self.pos
       size: self.size
     Color:
-      rgba: background_color
+      rgba: app.backgroundColor
   BoxLayout:
     size: root.width, root.height
     orientation: 'vertical'
@@ -272,7 +270,7 @@
     Label:
       text: "Voltooi betaling\nop PIN terminal"
       font_size: heading_font_size
-      color: text_color
+      color: app.textColor
 
 <UpgradeWashcardPaymentFailed>:
   canvas.before:
@@ -280,7 +278,7 @@
       pos: self.pos
       size: self.size
     Color:
-      rgba: background_color
+      rgba: app.backgroundColor
   BoxLayout:
     orientation: 'vertical'
     Image:
@@ -297,7 +295,7 @@
       pos: self.pos
       size: self.size
     Color:
-      rgba: background_color
+      rgba: app.backgroundColor
   BoxLayout:
     orientation: 'vertical'
     Image:
@@ -306,11 +304,11 @@
     Label:
       text: "Opwaarderen gelukt!"
       font_size: heading_font_size
-      color: text_color
+      color: app.textColor
     Label:
       text: "Terug naar programmaselectie"
       font_size: default_font_size
-      color: text_color
+      color: app.textColor
       
 <PaymentWashcardCardNotValid>:
   canvas.before:
@@ -318,7 +316,7 @@
       pos: self.pos
       size: self.size
     Color:
-      rgba: background_color
+      rgba: app.backgroundColor
   BoxLayout:
     orientation: 'vertical'
     Image:
@@ -335,7 +333,7 @@
       pos: self.pos
       size: self.size
     Color:
-      rgba: background_color
+      rgba: app.backgroundColor
   BoxLayout:
     orientation: 'vertical'
     Image:
@@ -352,7 +350,7 @@
       pos: self.pos
       size: self.size
     Color:
-      rgba: background_color
+      rgba: app.backgroundColor
   BoxLayout:
     orientation: 'vertical'
     Image:
@@ -366,7 +364,7 @@
       id: lbl_carwash
       text: "----"
       font_size: heading_font_size
-      color: text_color
+      color: app.textColor
 
 <PaymentWashcardCardNotFound>:
   canvas.before:
@@ -374,7 +372,7 @@
       pos: self.pos
       size: self.size
     Color:
-      rgba: background_color
+      rgba: app.backgroundColor
   BoxLayout:
     orientation: 'vertical'
     Image:
@@ -391,7 +389,7 @@
       pos: self.pos
       size: self.size
     Color:
-      rgba: background_color
+      rgba: app.backgroundColor
   BoxLayout:
     orientation: 'vertical'
     Image:
@@ -413,7 +411,7 @@
       pos: self.pos
       size: self.size
     Color:
-      rgba: background_color
+      rgba: app.backgroundColor
   BoxLayout:
     orientation: 'vertical'
     Image:
@@ -430,7 +428,7 @@
       pos: self.pos
       size: self.size
     Color:
-      rgba: background_color
+      rgba: app.backgroundColor
   BoxLayout:
     orientation: 'vertical'
     Image:
@@ -439,21 +437,21 @@
     Label:
       text: "Betaling gelukt!"
       font_size: heading_font_size
-      color: text_color
+      color: app.textColor
     Label:
       text: "Machine wordt gestart"
       font_size: default_font_size
-      color: text_color
+      color: app.textColor
     Label:
       id: lbl_balance_text
       text: ""
       font_size: heading_font_size
-      color: text_color
+      color: app.textColor
     Label:
       id: lbl_balance
       text: ""
       font_size: heading_font_size
-      color: text_color
+      color: app.textColor
 
 <InProgress>:
   canvas.before:
@@ -461,7 +459,7 @@
       pos: self.pos
       size: self.size
     Color:
-      rgba: background_color
+      rgba: app.backgroundColor
   BoxLayout:
     size: root.width, root.height
     orientation: 'vertical'
@@ -476,7 +474,7 @@
     Label:
       text: "Bezig met wassen"
       font_size: heading_font_size
-      color: text_color
+      color: app.textColor
 
 <Error>:
   canvas.before:

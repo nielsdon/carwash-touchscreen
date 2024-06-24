@@ -1,5 +1,18 @@
+"""Carwash class"""
 import sys
 import os
+import configparser
+import locale
+import logging
+import time
+import pigpio
+import requests
+from kivy.app import App
+from kivy.clock import mainthread
+from kivy.core.window import Window
+from kivy.logger import Logger
+from kivy.uix.screenmanager import NoTransition, ScreenManager
+from washingOrder import Order
 
 sys.path.append(os.path.join(os.path.dirname(__file__), 'screens'))
 from paymentFailed import PaymentFailed
@@ -21,23 +34,6 @@ from upgradeWashcardCredit import UpgradeWashcardCredit
 from upgradeWashcardPaymentFailed import UpgradeWashcardPaymentFailed
 from upgradeWashcardPaymentSuccess import UpgradeWashcardPaymentSuccess
 from upgradeWashcardReadCard import UpgradeWashcardReadCard
-from kivy.uix.label import Label
-from kivy.graphics import Color, Rectangle
-from washingOrder import Order
-
-import configparser
-import pigpio
-import locale
-import logging
-import time
-import requests
-
-from kivy.app import App
-from kivy.clock import mainthread
-from kivy.lang import Builder
-from kivy.core.window import Window
-from kivy.logger import Logger
-from kivy.uix.screenmanager import NoTransition, ScreenManager
 
 os.environ['KIVY_NO_FILELOG'] = '1'  # eliminate file log
 # globals
@@ -60,6 +56,7 @@ else:
 locale.setlocale(locale.LC_ALL, 'nl_NL.UTF-8')
 
 class Carwash(App):
+    """ class definition """
     activeOrder = ''
     activeWashcard = ''
     washcardTopup = 0
@@ -72,24 +69,24 @@ class Carwash(App):
     textColor = [0,0,0,1]
     backgroundColor = [1,1,1,1]
     supportPhone = ''
-    
+
     def __init__(self, **kwargs):
         super(Carwash, self).__init__(**kwargs)
         # Init globals
         self.TEST_MODE = TEST_MODE
         self.CARWASH_ID = CARWASH_ID
-        
+
         # Initialize API connection and settings
         url = f'https://api.washterminalpro.nl/{API_PATH}/login/'
         response = requests.post(url, json={"username": API_TOKEN, "password": API_SECRET})
         if response.status_code != 200:
             response.raise_for_status()
-            
+
         responseData = response.json()
         globals()['JWT_TOKEN'] = responseData["jwt"]
         globals()['CARWASH_ID'] = responseData["carwash_id"]
         self.loadSettings()
-        
+
         # Setup window and screen manager
         Window.rotation = 90
         Window.show_cursor = False
@@ -98,11 +95,11 @@ class Carwash(App):
     def build(self):
         # Create and return the root widget (ScreenManager)
         self.sm = ScreenManager(transition=NoTransition())
-        self.loadScreens()
+        self.load_screens()
         return self.sm    
-      
-    def loadScreens(self):
-        # setup screens
+
+    def load_screens(self):
+        """ setup screens"""
         self.sm.add_widget(ProgramSelection(name="program_selection", settings=self.SETTINGS))
         self.sm.add_widget(ProgramSelectionHigh(name="program_selection_high", settings=self.SETTINGS))
         self.sm.add_widget(PaymentMethod(name="payment_method"))
@@ -124,6 +121,7 @@ class Carwash(App):
         self.sm.add_widget(InProgress(name="in_progress"))
 
     def loadSettings(self):
+        """loads settings from DB"""
         url = f'https://api.washterminalpro.nl/{API_PATH}/carwash/{CARWASH_ID}/settings'
         headers = {"Authorization": f'Bearer {JWT_TOKEN}'}
         
@@ -151,7 +149,9 @@ class Carwash(App):
         self.changeScreen("payment_method")
 
     def startMachine(self):
-        bin = '{0:04b}'.format(self.activeOrder.program)
+        #transform WASH_1 to 1
+        programNumber = int(self.activeOrder.program[5:])
+        bin = '{0:04b}'.format(programNumber)
         logging.debug("Starting machine. Binary: %s", str(bin))
         arr = list(bin)
         print(arr)
@@ -207,7 +207,8 @@ class Carwash(App):
             logging.error("Unexpected error during GPIO setup: %s", e)
             pi.stop()
             raise
-    def cleanUp(self):
+
+    def clean_up(self):
         pi.stop()
 
     def changeScreen(self, screenName, *args):

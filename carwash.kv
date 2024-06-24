@@ -1,8 +1,6 @@
 #:set default_font_size "42sp"
 #:set heading_font_size "60sp"
 #:set text_color 0.15,0.45,0.73,1
-#:set button_background_color 0.21,0.69,0.94,1
-#:set button_text_color 1,1,1,1
 #:set background_color 1,1,1,1
 #:set error_color 1,0,0,1
 
@@ -16,17 +14,23 @@
   BoxLayout:
     size: root.width, root.height
     orientation: 'vertical'
-    Image:
-      source: 'logo.png'
-      size: self.texture_size
-      size_hint_y: 1.5
-    Button:
-      text: "Wasprogramma 4 (Bus)"
-      background_color : button_background_color
-      font_size: default_font_size
-      color: button_text_color
-      on_release:
-        root.selectProgram(4)
+    id: selectionLayout
+    RelativeLayout:  # Use RelativeLayout to position elements freely
+      Image:
+        source: 'logo.png'
+        size: self.texture_size
+        size_hint_y: 2.8
+        pos_hint: {'center_x': 0.5, 'top': 1.4}  # Center horizontally, top of parent
+      # Conditional label
+      Label:
+        id: test_label
+        text: "TEST"
+        font_size: '20sp'
+        color: 1, 0, 0, 1  # Red color
+        size_hint: None, None
+        size: self.texture_size
+        pos_hint: {'x': 0, 'top': 1.0}  # Position top-left corner
+        opacity: 1 if app.TEST_MODE else 0  # Conditional visibility
 
 <ProgramSelection>:
   canvas.before:
@@ -39,10 +43,22 @@
     size: root.width, root.height
     orientation: 'vertical'
     id: selectionLayout
-    Image:
-      source: 'logo.png'
-      size: self.texture_size
-      size_hint_y: 2.8
+    RelativeLayout:  # Use RelativeLayout to position elements freely
+      Image:
+        source: 'logo.png'
+        size: self.texture_size
+        size_hint_y: 2.8
+        pos_hint: {'center_x': 0.5, 'top': 1.4}  # Center horizontally, top of parent
+      # Conditional label
+      Label:
+        id: test_label
+        text: "TEST"
+        font_size: '20sp'
+        color: 1, 0, 0, 1  # Red color
+        size_hint: None, None
+        size: self.texture_size
+        pos_hint: {'x': 0, 'top': 1.0}  # Position top-left corner
+        opacity: 1 if app.TEST_MODE else 0  # Conditional visibility
     Label:
       text: " "
       font_size: heading_font_size
@@ -68,23 +84,23 @@
       color: text_color
     Button:
       text: "PIN"
-      background_color : button_background_color
+      background_color : app.buttonBackgroundColor
       font_size: default_font_size
-      color: button_text_color
+      color: app.buttonTextColor
       on_release:
         root.selectPin()
     Button:
       text: "Waspas"
-      background_color : button_background_color
+      background_color : app.buttonBackgroundColor
       font_size: default_font_size
-      color: button_text_color
+      color: app.buttonTextColor
       on_release:
         root.selectWashcard()
     Button:
       text: "Annuleren"
-      background_color : button_background_color
+      background_color : app.buttonBackgroundColor
       font_size: default_font_size
-      color: button_text_color
+      color: app.buttonTextColor
       on_release:
         root.cancel()        
 <Payment>:
@@ -202,16 +218,16 @@
       orientation: 'horizontal'
       Button:
         text: "€ 20,00"
-        background_color : button_background_color
+        background_color : app.buttonBackgroundColor
         font_size: default_font_size
-        color: button_text_color
+        color: app.buttonTextColor
         on_release:
           root.chooseAmount(20)
       Button:
         text: "€ 50,00"
-        background_color : button_background_color
+        background_color : app.buttonBackgroundColor
         font_size: default_font_size
-        color: button_text_color
+        color: app.buttonTextColor
         on_release:
           root.chooseAmount(50)
     BoxLayout:
@@ -219,23 +235,23 @@
       orientation: 'horizontal'
       Button:
         text: "€ 100,00"
-        background_color : button_background_color
+        background_color : app.buttonBackgroundColor
         font_size: default_font_size
-        color: button_text_color
+        color: app.buttonTextColor
         on_release:
           root.chooseAmount(100)
       Button:
         text: "€ 200,00"
-        background_color : button_background_color
+        background_color : app.buttonBackgroundColor
         font_size: default_font_size
-        color: button_text_color
+        color: app.buttonTextColor
         on_release:
           root.chooseAmount(200)
     Button:
       text: "Annuleren"
-      background_color : button_background_color
+      background_color : app.buttonBackgroundColor
       font_size: default_font_size
-      color: button_text_color
+      color: app.buttonTextColor
       on_release:
         root.cancel()
 
@@ -313,6 +329,23 @@
       font_size: heading_font_size
       color: error_color
 
+<UpgradeWashcardCredit>:
+  canvas.before:
+    Rectangle:
+      pos: self.pos
+      size: self.size
+    Color:
+      rgba: background_color
+  BoxLayout:
+    orientation: 'vertical'
+    Image:
+      source: 'error.png'
+      size: self.texture_size
+    Label:
+      text: "Credit waspassen kun\nje niet opwaarderen"
+      font_size: heading_font_size
+      color: error_color
+      
 <PaymentWashcardWrongCarwash>:
   canvas.before:
     Rectangle:
@@ -418,7 +451,7 @@
       color: text_color
     Label:
       id: lbl_balance
-      text: "n.v.t."
+      text: ""
       font_size: heading_font_size
       color: text_color
 
@@ -434,6 +467,10 @@
     orientation: 'vertical'
     Image:
       source: 'logo.png'
+      size: self.texture_size
+      size_hint_y: 1.5
+    Image:
+      source: 'progress.gif'
       size: self.texture_size
       size_hint_y: 1.5
     Label:
@@ -463,6 +500,10 @@
       font_size: default_font_size
       color: error_color
     Label:
-      text: "Neem contact op met 0612345678"
+      text: "Neem contact op met:"
       font_size: default_font_size
+      color: error_color
+    Label:
+      text: app.supportPhone
+      font_size: heading_font_size
       color: error_color

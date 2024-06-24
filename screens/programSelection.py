@@ -8,14 +8,20 @@ class ProgramSelection(Screen):
         SETTINGS = kwargs.pop('settings', None)
         super(ProgramSelection, self).__init__(**kwargs)
         layout = self.ids.selectionLayout
-        for idx, data in enumerate(SETTINGS["prices"], start=0):
-            if 'WASH' in data:
-                counter = idx + 1
-                btn = Button(text="Wasprogramma %s" % str(counter), background_color=[0.21,0.69,0.94,1], font_size="42sp", color=[1,1,1,1])
-                #print("Wasprogramma %s" % str(counter))
-                btn.bind(on_release=lambda instance, counter=counter: self.selectProgram(counter))
-                layout.add_widget(btn)
-        btn = Button(text="Waspas opwaarderen", background_color=[0.21,0.69,0.94,1], font_size="42sp", color=[1,1,1,1])
+        textColor = [1,1,1,1]
+        backgroundColor = [0,0,0,1]
+        if "buttonBackgroundColor" in SETTINGS["general"]:
+            backgroundColor = SETTINGS["general"]["buttonBackgroundColor"]
+        if "buttonTextColor" in SETTINGS["general"]:
+            textColor = SETTINGS["general"]["buttonTextColor"]
+        
+        for idx, data in enumerate(SETTINGS["general"]["defaultPrograms"], start=0):
+            counter = idx + 1
+            buttonLabel = SETTINGS["names"][data]
+            btn = Button(text=buttonLabel, background_color=backgroundColor, font_size="42sp", color=textColor)
+            btn.bind(on_release=lambda instance, counter=counter: self.selectProgram(data))
+            layout.add_widget(btn)
+        btn = Button(text="Waspas opwaarderen", background_color=backgroundColor, font_size="42sp", color=textColor)
         btn.bind(on_release=lambda instance: self.upgradeWashcard())
         layout.add_widget(btn)
         

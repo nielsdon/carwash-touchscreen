@@ -17,8 +17,15 @@ class Order():
       self.program = program
       globals()["SETTINGS"] = settings
       logging.basicConfig(encoding='utf-8', level=int(SETTINGS["general"]["logLevel"]))
-      self.description = "Wasprogramma " +str(program)
-      self.transaction_type = 'WASH_' +str(program)
+
+      # get the description
+      if "names" in SETTINGS and program in SETTINGS["names"]:
+          self.description = SETTINGS["names"][program]
+      else:
+          self.description = "Wasprogramma " +str(program)
+      # get the transaction type
+      self.transaction_type = str(program)
+      
       #additional price for manned days
       uptick = 0
       if "mannedDays" in SETTINGS["general"]:
@@ -33,8 +40,11 @@ class Order():
               logging.info("Nope!")
       else:
           logging.info("No uptick today")
-      self.amount = float(SETTINGS["prices"][self.transaction_type]) + float(uptick)
-      #determine order ID
+
+      # determine the price
+      self.amount = float(SETTINGS["prices"][program]) + float(uptick)
+      
+      # determine order ID
       try:
           file = open('orderId.txt', 'r+')
           read = file.read()

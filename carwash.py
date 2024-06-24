@@ -17,6 +17,7 @@ from programSelection import ProgramSelection
 from programSelectionHigh import ProgramSelectionHigh
 from upgradeWashcardChooseAmount import UpgradeWashcardChooseAmount
 from upgradeWashcardPayment import UpgradeWashcardPayment
+from upgradeWashcardCredit import UpgradeWashcardCredit
 from upgradeWashcardPaymentFailed import UpgradeWashcardPaymentFailed
 from upgradeWashcardPaymentSuccess import UpgradeWashcardPaymentSuccess
 from upgradeWashcardReadCard import UpgradeWashcardReadCard
@@ -66,6 +67,11 @@ class Carwash(App):
     CARWASH_ID = 0
     TEST_MODE = True
     SETTINGS = {}
+    buttonBackgroundColor = [1,1,1,1]
+    buttonTextColor = [0,0,0,1]
+    textColor = [0,0,0,1]
+    backgroundColor = [1,1,1,1]
+    supportPhone = ''
     
     def __init__(self, **kwargs):
         super(Carwash, self).__init__(**kwargs)
@@ -98,7 +104,7 @@ class Carwash(App):
     def loadScreens(self):
         # setup screens
         self.sm.add_widget(ProgramSelection(name="program_selection", settings=self.SETTINGS))
-        self.sm.add_widget(ProgramSelectionHigh(name="program_selection_high"))
+        self.sm.add_widget(ProgramSelectionHigh(name="program_selection_high", settings=self.SETTINGS))
         self.sm.add_widget(PaymentMethod(name="payment_method"))
         self.sm.add_widget(Payment(name="payment"))
         self.sm.add_widget(PaymentWashcard(name="payment_washcard"))
@@ -109,6 +115,7 @@ class Carwash(App):
         self.sm.add_widget(PaymentFailed(name="payment_failed"))
         self.sm.add_widget(PaymentSuccess(name="payment_success"))
         self.sm.add_widget(UpgradeWashcardReadCard(name="upgrade_washcard_read_card", settings=self.SETTINGS))
+        self.sm.add_widget(UpgradeWashcardCredit(name="upgrade_washcard_credit"))
         self.sm.add_widget(UpgradeWashcardChooseAmount(name="upgrade_washcard_choose_amount"))
         self.sm.add_widget(UpgradeWashcardPayment(name="upgrade_washcard_payment"))
         self.sm.add_widget(UpgradeWashcardPaymentSuccess(name="upgrade_washcard_payment_success"))
@@ -128,6 +135,11 @@ class Carwash(App):
         if "general" in self.SETTINGS:
             self.SETTINGS["general"]["jwtToken"] = JWT_TOKEN
             self.SETTINGS["general"]["carwashId"] = CARWASH_ID
+            self.buttonBackgroundColor = self.SETTINGS["general"]["buttonBackgroundColor"]
+            self.buttonTextColor = self.SETTINGS["general"]["buttonTextColor"]
+            self.backgroundColor = self.SETTINGS["general"]["backgroundColor"]
+            self.textColor = self.SETTINGS["general"]["textColor"]
+            self.supportPhone = self.SETTINGS["general"]["supportPhone"]
         print(self.SETTINGS)
         Logger.setLevel(int(self.SETTINGS["general"]["logLevel"]))
         logging.basicConfig(encoding='utf-8', level=int(self.SETTINGS["general"]["logLevel"]))

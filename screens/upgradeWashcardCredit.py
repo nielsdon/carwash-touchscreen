@@ -3,9 +3,9 @@ from kivy.app import App
 import logging
 import time
 
-class PaymentWashcardWrongCarwash(Screen):
+class UpgradeWashcardCredit(Screen):
     def on_enter(self, *args, **kwargs):
-        logging.debug("=== Wrong Carwash ===")
+        logging.debug("=== Attempt topup credit card ===")
         app = App.get_running_app()
         time.sleep(6)
         app.changeScreen('program_selection')

@@ -20,6 +20,8 @@ class UpgradeWashcardReadCard(Screen):
             app.changeScreen('payment_washcard_card_not_found')
         elif washcard.carwash == '':
             app.changeScreen('payment_washcard_card_not_valid')
+        elif  washcard.balance is None:
+            app.changeScreen('upgrade_washcard_credit')
         elif int(washcard.carwash.id) != app.CARWASH_ID:
             logging.debug('Washcard carwash_id: %s', str(washcard.carwash.id))
             logging.debug('Config carwash_id: %s', app.CARWASH_ID)

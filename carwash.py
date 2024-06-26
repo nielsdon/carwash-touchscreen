@@ -18,6 +18,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), 'screens'))
 from paymentFailed import PaymentFailed
 from error import Error
 from inProgress import InProgress
+from moveVehicle import MoveVehicle
 from payment import Payment
 from paymentMethod import PaymentMethod
 from paymentSuccess import PaymentSuccess
@@ -61,6 +62,8 @@ class Carwash(App):
     activeWashcard = ''
     washcardTopup = 0
     HIGH_VEHICLE = False
+    STOP_VEHICLE = False
+    ERROR = True
     CARWASH_ID = 0
     TEST_MODE = True
     SETTINGS = {}
@@ -85,7 +88,7 @@ class Carwash(App):
         responseData = response.json()
         globals()['JWT_TOKEN'] = responseData["jwt"]
         globals()['CARWASH_ID'] = responseData["carwash_id"]
-        self.loadSettings()
+        self.load_settings()
 
         # Setup window and screen manager
         Window.rotation = 90
@@ -96,10 +99,17 @@ class Carwash(App):
         # Create and return the root widget (ScreenManager)
         self.sm = ScreenManager(transition=NoTransition())
         self.load_screens()
-        return self.sm    
+
+        #define initial screen
+        if self.STOP_VEHICLE != 0:
+            self.changeScreen("moveVehicle")
+        if self.ERROR != 0:
+            self.changeScreen("error")
+        return self.sm
 
     def load_screens(self):
         """ setup screens"""
+        self.sm.add_widget(MoveVehicle(name="move_vehicle"))
         self.sm.add_widget(ProgramSelection(name="program_selection", settings=self.SETTINGS))
         self.sm.add_widget(ProgramSelectionHigh(name="program_selection_high", settings=self.SETTINGS))
         self.sm.add_widget(PaymentMethod(name="payment_method"))
@@ -120,7 +130,7 @@ class Carwash(App):
         self.sm.add_widget(Error(name="error"))
         self.sm.add_widget(InProgress(name="in_progress"))
 
-    def loadSettings(self):
+    def load_settings(self):
         """loads settings from DB"""
         url = f'https://api.washterminalpro.nl/{API_PATH}/carwash/{CARWASH_ID}/settings'
         headers = {"Authorization": f'Bearer {JWT_TOKEN}'}
@@ -187,15 +197,32 @@ class Carwash(App):
             pi.write(int(self.SETTINGS["gpio"]["BIT8LED"]), 1)
 
             # Input setup
-            logging.debug("Inputs: %s %s %s" % (self.SETTINGS["gpio"]["errorInput"],self.SETTINGS["gpio"]["progressInput"],self.SETTINGS["gpio"]["highVehicle"]) )
-            pi.set_pull_up_down(int(self.SETTINGS["gpio"]["errorInput"]), pigpio.PUD_UP)
-            pi.set_pull_up_down(int(self.SETTINGS["gpio"]["progressInput"]), pigpio.PUD_DOWN)
-            pi.set_pull_up_down(int(self.SETTINGS["gpio"]["highVehicle"]), pigpio.PUD_DOWN)
+            pi.set_mode(int(self.SETTINGS["gpio"]["errorInput"]), pigpio.INPUT)
+            pi.set_mode(int(self.SETTINGS["gpio"]["progressInput"]), pigpio.INPUT)
+            pi.set_mode(int(self.SETTINGS["gpio"]["highVehicle"]), pigpio.INPUT)
+            pi.set_mode(int(self.SETTINGS["gpio"]["stopVehicle"]), pigpio.INPUT)
+            
+            # check inputs
+            logging.debug("STOP: %s", str(pi.read(int(self.SETTINGS["gpio"]["stopVehicle"]))))
+            logging.debug("ERROR: %s", str(pi.read(int(self.SETTINGS["gpio"]["errorInput"]))))
+            logging.debug("PROGRESS: %s", str(pi.read(int(self.SETTINGS["gpio"]["progressInput"]))))
+            logging.debug("HIGH: %s", str(pi.read(int(self.SETTINGS["gpio"]["highVehicle"]))))
+
+            if pi.read(int(self.SETTINGS["gpio"]["stopVehicle"])) == 1:
+                self.STOP_VEHICLE = True
+            if pi.read(int(self.SETTINGS["gpio"]["errorInput"])) == 1:
+                self.ERROR = False
+            #logging.debug("Inputs: %s %s %s" % (self.SETTINGS["gpio"]["errorInput"],self.SETTINGS["gpio"]["progressInput"],self.SETTINGS["gpio"]["highVehicle"]) )
+            #pi.set_pull_up_down(int(self.SETTINGS["gpio"]["errorInput"]), pigpio.PUD_UP)
+            #pi.set_pull_up_down(int(self.SETTINGS["gpio"]["progressInput"]), pigpio.PUD_DOWN)
+            #pi.set_pull_up_down(int(self.SETTINGS["gpio"]["highVehicle"]), pigpio.PUD_DOWN)
+            #pi.set_pull_up_down(int(self.SETTINGS["gpio"]["stopVehicle"]), pigpio.PUD_DOWN)
 
             # Machine in progress/done
             pi.callback(int(self.SETTINGS["gpio"]["progressInput"]), pigpio.EITHER_EDGE, self.progressStatusChanged)
             pi.callback(int(self.SETTINGS["gpio"]["errorInput"]), pigpio.EITHER_EDGE, self.errorStatusChanged)
             pi.callback(int(self.SETTINGS["gpio"]["highVehicle"]), pigpio.EITHER_EDGE, self.highVehicleStatusChanged)
+            pi.callback(int(self.SETTINGS["gpio"]["stopVehicle"]), pigpio.EITHER_EDGE, self.stopStatusChanged)
             logging.debug("GPIO setup completed successfully")
 
         except RuntimeError as e:
@@ -217,40 +244,66 @@ class Carwash(App):
 
     @mainthread
     def progressStatusChanged(self, *args):
-        if pi.read(int(self.SETTINGS["gpio"]["progressInput"])):
+        logging.debug("PROGRESS: %s", str(pi.read(int(self.SETTINGS["gpio"]["progressInput"]))))
+        if pi.read(int(self.SETTINGS["gpio"]["progressInput"])) == 1:
             logging.debug("Machine in progress...")
             pi.write(int(self.SETTINGS["gpio"]["progressLED"]), 1)
-            self.changeScreen("in_progress")
+            self.statusChanged()
         else:
             logging.debug("Machine done!")
             pi.write(int(self.SETTINGS["gpio"]["progressLED"]), 0)
-            # show program selection screen
-            self.changeScreen("program_selection")
+            self.statusChanged()
 
     @mainthread
     def errorStatusChanged(self, *args):
-        if pi.read(int(self.SETTINGS["gpio"]["errorInput"])):
+        logging.debug("ERROR: %s", str(pi.read(int(self.SETTINGS["gpio"]["errorInput"]))))
+        if pi.read(int(self.SETTINGS["gpio"]["errorInput"])) == 1:
             logging.debug("Error resolved!")
             # switch on error led
+            self.ERROR = False
             pi.write(int(self.SETTINGS["gpio"]["errorLED"]), 0)
-            # show program selection screen
-            self.changeScreen("program_selection")
+            self.statusChanged()
         else:
             logging.debug("Error detected!")
             # switch on error led
+            self.ERROR = True
             pi.write(int(self.SETTINGS["gpio"]["errorLED"]), 1)
-            # show error screen
-            self.changeScreen("error")
+            self.statusChanged()
 
     @mainthread
     def highVehicleStatusChanged(self, *args):
-        if pi.read(int(self.SETTINGS["gpio"]["highVehicle"])):
+        logging.debug("HIGH: %s", str(pi.read(int(self.SETTINGS["gpio"]["highVehicle"]))))
+        if pi.read(int(self.SETTINGS["gpio"]["highVehicle"])) == 1:
             logging.debug("High vehicle detected!")
             self.HIGH_VEHICLE = True
-            # show program selection screen for high vehicles
-            self.changeScreen("program_selection_high")
+            self.statusChanged()
         else:
             logging.debug("High vehicle no longer detected")
             self.HIGH_VEHICLE = False
-            # show normal program selection screen
-            self.changeScreen("program_selection")
+            self.statusChanged()
+
+    @mainthread
+    def stopStatusChanged(self, *args):
+        logging.debug("STOP: %s", str(pi.read(int(self.SETTINGS["gpio"]["stopVehicle"]))))
+        if pi.read(int(self.SETTINGS["gpio"]["stopVehicle"])) == 1:
+            logging.debug("Vehicle in position")
+            self.STOP_VEHICLE = True
+            self.statusChanged()
+        else:
+            logging.debug("Vehicle not in position")
+            self.STOP_VEHICLE = False
+            self.statusChanged()
+
+    @mainthread
+    def statusChanged(self, *args):
+        logging.debug("A status has changed, determining which screen to show...")
+        if self.ERROR:
+            self.changeScreen("error")
+            return True
+        if not self.STOP_VEHICLE:
+            self.changeScreen("move_vehicle")
+            return True
+        if self.HIGH_VEHICLE:
+            self.changeScreen("program_selection_high")
+            return True
+        self.changeScreen("program_selection")

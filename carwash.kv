@@ -471,8 +471,33 @@
       source: 'progress.gif'
       size: self.texture_size
       size_hint_y: 1.5
+      anim_loop: 0
+      anim_delay: 0
     Label:
       text: "Bezig met wassen"
+      font_size: heading_font_size
+      color: app.textColor
+
+<MoveVehicle>:
+  canvas.before:
+    Rectangle:
+      pos: self.pos
+      size: self.size
+    Color:
+      rgba: app.backgroundColor
+  BoxLayout:
+    size: root.width, root.height
+    orientation: 'vertical'
+    Image:
+      source: 'logo.png'
+      size: self.texture_size
+      size_hint_y: 1.5
+    Image:
+      source: 'arrow_up.png'
+      size: self.texture_size
+      size_hint_y: 1.5
+    Label:
+      text: "Plaats uw auto"
       font_size: heading_font_size
       color: app.textColor
 

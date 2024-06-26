@@ -119,7 +119,13 @@
       text: "Voltooi betaling\nop PIN terminal"
       font_size: heading_font_size
       color: app.textColor
-
+    Button:
+      text: "Annuleren"
+      background_color : app.buttonBackgroundColor
+      font_size: default_font_size
+      color: app.buttonTextColor
+      on_release:
+        root.cancel()
 <PaymentWashcard>:
   canvas.before:
     Rectangle:
@@ -215,6 +221,7 @@
       size: root.width, root.height
       orientation: 'horizontal'
       Button:
+        id: button_topup_20
         text: "€ 20,00"
         background_color : app.buttonBackgroundColor
         font_size: default_font_size
@@ -222,6 +229,7 @@
         on_release:
           root.chooseAmount(20)
       Button:
+        id: button_topup_50
         text: "€ 50,00"
         background_color : app.buttonBackgroundColor
         font_size: default_font_size
@@ -232,6 +240,7 @@
       size: root.width, root.height
       orientation: 'horizontal'
       Button:
+        id: button_topup_100
         text: "€ 100,00"
         background_color : app.buttonBackgroundColor
         font_size: default_font_size
@@ -239,6 +248,7 @@
         on_release:
           root.chooseAmount(100)
       Button:
+        id: button_topup_200
         text: "€ 200,00"
         background_color : app.buttonBackgroundColor
         font_size: default_font_size

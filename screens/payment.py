@@ -36,3 +36,13 @@ class Payment(Screen):
             logging.debug('fout bij betaling')
             pay.cancelTransaction(transactionId)
             app.changeScreen('payment_failed')
+    def cancel(self, *args, **kwargs):
+        logging.debug("=== Cancelling PIN payment ===")
+        app = App.get_running_app()
+        SETTINGS = app.SETTINGS;
+        # pay.nl communicatie: start transaction
+        pay = PayNL(SETTINGS)
+        transactionId = pay.payOrder(app.activeOrder)
+        logging.debug("TransactionId: %s", transactionId)
+        pay.cancelTransaction(transactionId)
+        app.show_start_screen()

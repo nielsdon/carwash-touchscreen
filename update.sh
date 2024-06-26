@@ -13,9 +13,18 @@ branch=$1
 
 # Validate the branch name
 if [ "${branch}" != "develop" ] && [ "${branch}" != "main" ]; then
-  echo "Error: Invalid branch name '${branch}'. Only 'develop' and 'main' branches are allowed."
-  echo "Assuming branch 'main'"
-  branch='main'
+  CONFIG_FILE="config.ini"
+
+  # Check if testMode is True
+  TEST_MODE=$(grep -E '^testMode=True' "$CONFIG_FILE")
+
+  if [ "$TEST_MODE" ]; then
+    # Set the branch variable to 'develop'
+    branch="develop"
+  else
+    # Set the branch variable to some default value or leave it empty
+    branch="main"  # or set to "" if you prefer
+  fi
 fi
 
 # clean up first

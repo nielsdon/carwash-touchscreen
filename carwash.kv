@@ -4,31 +4,29 @@
 
 <ProgramSelectionHigh>:
   canvas.before:
+    Color:
+      rgba: 1,1,1,1
     Rectangle:
       pos: self.pos
       size: self.size
-    Color:
-      rgba: 1,1,1,1
-  BoxLayout:
+  RelativeLayout:
     size: root.width, root.height
-    orientation: 'vertical'
-    id: selectionLayout
-    RelativeLayout:  # Use RelativeLayout to position elements freely
+    BoxLayout:
+      orientation: 'vertical'
+      size: root.width, root.height
+      id: selectionLayout
       Image:
         source: 'logo.png'
         size: self.texture_size
-        size_hint_y: 2.8
-        pos_hint: {'center_x': 0.5, 'top': 1.4}  # Center horizontally, top of parent
-      # Conditional label
-      Label:
-        id: test_label
-        text: "TEST"
-        font_size: '20sp'
-        color: 1, 0, 0, 1  # Red color
-        size_hint: None, None
-        size: self.texture_size
-        pos_hint: {'x': 0, 'top': 1.0}  # Position top-left corner
-        opacity: 1 if app.TEST_MODE else 0  # Conditional visibility
+    Label:
+      id: test_label
+      text: "TEST"
+      font_size: '20sp'
+      color: error_color
+      size_hint: None, None
+      size: self.texture_size
+      pos_hint: {'x': 0, 'top': 1.0}  # Position top-left corner
+      opacity: 1 if app.TEST_MODE else 0  # Conditional visibility
 
 <ProgramSelection>:
   canvas.before:
@@ -37,30 +35,25 @@
       size: self.size
     Color:
       rgba: app.backgroundColor
-  BoxLayout:
+  RelativeLayout:
     size: root.width, root.height
-    orientation: 'vertical'
-    id: selectionLayout
-    RelativeLayout:  # Use RelativeLayout to position elements freely
+    BoxLayout:
+      size: root.width, root.height
+      orientation: 'vertical'
+      id: selectionLayout
       Image:
         source: 'logo.png'
         size: self.texture_size
-        size_hint_y: 2.8
-        pos_hint: {'center_x': 0.5, 'top': 1.4}  # Center horizontally, top of parent
-      # Conditional label
-      Label:
-        id: test_label
-        text: "TEST"
-        font_size: '20sp'
-        color: 1, 0, 0, 1  # Red color
-        size_hint: None, None
-        size: self.texture_size
-        pos_hint: {'x': 0, 'top': 1.0}  # Position top-left corner
-        opacity: 1 if app.TEST_MODE else 0  # Conditional visibility
+    # Conditional label
     Label:
-      text: " "
-      font_size: heading_font_size
-      color: app.textColor 
+      id: test_label
+      text: "TEST"
+      font_size: '20sp'
+      color: error_color
+      size_hint: None, None
+      size: self.texture_size
+      pos_hint: {'x': 0, 'top': 1.0}  # Position top-left corner
+      opacity: 1 if app.TEST_MODE else 0  # Conditional visibility
         
 <PaymentMethod>:
   canvas.before:

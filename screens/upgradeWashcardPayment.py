@@ -9,7 +9,7 @@ from washcard import Washcard
 
 class UpgradeWashcardPayment(Screen):
     transaction_status = ''
-    pay = False
+    pay = {}
     transaction_id = 0
     cancel_transaction = threading.Event()
     settings = {}
@@ -46,11 +46,7 @@ class UpgradeWashcardPayment(Screen):
         # timeout is reached, status is no longer PENDING or payment is cancelled
         if self.transaction_status == 'PAID':
             logging.debug('betaling gelukt!')
-            # log the transaction
-            washcard = Washcard(self.settings)
-            response = washcard.pay(app.activeOrder)
-            logging.debug(response)
-            app.changeScreen('payment_success')
+            app.changeScreen('upgrade_washcard_payment_success')
         elif self.cancel_transaction.is_set():
             logging.debug('transaction cancelled')
             self.cancel_transaction.clear()
@@ -59,7 +55,7 @@ class UpgradeWashcardPayment(Screen):
         else:
             logging.debug('some payment error')
             #self.pay.cancelTransaction(self.transaction_id)
-            Clock.schedule_once(lambda dt: app.changeScreen('payment_failed'))
+            Clock.schedule_once(lambda dt: app.changeScreen('upgrade_washcard_payment_failed'))
 
     def cancel(self, *args, **kwargs):
         """ cancel button is pressed """

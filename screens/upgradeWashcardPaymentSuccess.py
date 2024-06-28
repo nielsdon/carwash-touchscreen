@@ -1,7 +1,7 @@
-from kivy.uix.screenmanager import Screen
-from kivy.app import App
 import logging
 import time
+from kivy.uix.screenmanager import Screen
+from kivy.app import App
 
 class UpgradeWashcardPaymentSuccess(Screen):
     def on_enter(self, *args, **kwargs):
@@ -12,4 +12,4 @@ class UpgradeWashcardPaymentSuccess(Screen):
         time.sleep(5)
         app.activeWashcard = ''
         app.washcardTopup = ''
-        app.changeScreen("program_selection")
+        app.show_start_screen()

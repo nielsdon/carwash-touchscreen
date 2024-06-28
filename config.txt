@@ -33,7 +33,7 @@ max_framebuffers=2
 
 # Set GPIO12 to be an output set to 1
 gpio=5,6,13,19,23,24=op,dh
-gpio=4,21,22=ip
+gpio=2,4,21,22=ip
 
 # Don't have the firmware create an initial video= setting in cmdline.txt.
 # Use the kernel's default instead.

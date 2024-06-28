@@ -9,4 +9,4 @@ class PaymentFailed(Screen):
         logging.debug("=== Payment failed ===")
         app = App.get_running_app()
         app.activeOrder = ''
-        Clock.schedule_once(partial(app.changeScreen, "program_selection"), 5)
+        Clock.schedule_once(partial(app.show_start_screen), 5)

@@ -5,6 +5,7 @@ from datetime import datetime
 
 CONFIG = configparser.ConfigParser()
 CONFIG.read('config.ini')
+SETTINGS = {}
 
 class Order():
   program = 0

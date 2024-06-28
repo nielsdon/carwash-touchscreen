@@ -6,7 +6,6 @@ import logging
 import requests
 import evdev
 from munch import munchify
-from requests.auth import HTTPBasicAuth
 
 CONFIG = configparser.ConfigParser()
 CONFIG.read('config.ini')
@@ -39,7 +38,7 @@ class Washcard():
         
     def loadInfo(self):
         info = self.getInfo()
-        if (info == {}):
+        if info == {}:
             return False
         info = munchify(info)
         logging.debug('=====INFO: =====')
@@ -89,7 +88,7 @@ class Washcard():
 
     def upgrade(self, amount):
         logging.debug('Upgrading card %s with € %s', self.uid, str(amount))
-        response = self.startTransaction(amount, 'Card top-up')
+        response = self.startTransaction(amount, 'Card top-up', 'TOPUP_' +str(amount))
         return response
 
     def startTransaction(self, amount=0, description='', transaction_type=''):

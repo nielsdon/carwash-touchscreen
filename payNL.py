@@ -12,17 +12,21 @@ class PayNL():
     transactionStatusUrl = 'https://rest.pay.nl/v2/transactions/%s'
     createTransactionUrl = 'https://rest.pay.nl/v1/transactions'
     cancelTransactionUrl = 'https://rest.pay.nl/v2/transactions/%s/cancel'
-
+    settings = {}
+    
     def __init__(self, settings):
-        globals()["SETTINGS"] = settings
-        logging.basicConfig(encoding='utf-8', level=int(SETTINGS["general"]["logLevel"]))
-        self.credentials = HTTPBasicAuth(SETTINGS["paynl"]["tokenCode"], SETTINGS["paynl"]["apiToken"])
+        self.settings = settings
+        if CONFIG.get('General', 'testMode') == 'True':
+            logging.basicConfig(encoding='utf-8', level=10)
+        else:
+            logging.basicConfig(encoding='utf-8', level=50)
+        self.credentials = HTTPBasicAuth(self.settings["tokenCode"], self.settings["apiToken"])
         self.headers = {
             "accept": "application/json",
             "content-type": "application/json",
         }
 
-    def getTransactionStatus(self, transactionId):
+    def get_transaction_status(self, transactionId):
         url = self.transactionStatusUrl % transactionId
         status = ''
         try:
@@ -40,7 +44,7 @@ class PayNL():
     def payOrder(self, order):
         return self.startTransaction(order.amount, order.description, order.id, 'WASH')
 
-    def payCardUpgrade(self, amount=0, card={}):
+    def pay_card_upgrade(self, amount=0, card={}):
         return self.startTransaction(amount, 'washcard top-up', 'top-up', 'TOPUP_'+str(amount))
 
     def startTransaction(self, amount=0, description='', reference='', extra1='', extra2=''):
@@ -55,7 +59,7 @@ class PayNL():
             logging.debug('Payment test mode OFF')
         # END TEST MODE
         data = {
-            "serviceId": SETTINGS["paynl"]["serviceId"],
+            "serviceId": self.settings["serviceId"],
             "description": description,
             "reference": reference,
             "returnUrl": "https://demo.pay.nl/complete/",
@@ -65,8 +69,8 @@ class PayNL():
                 "currency": "EUR"
             },
             "paymentMethod": {
-                "id": SETTINGS["paynl"]["paymentOptionId"],
-                "subId": SETTINGS["paynl"]["terminalId"]
+                "id": self.settings["paymentOptionId"],
+                "subId": self.settings["terminalId"]
             },
             "integration": {
                 "testMode": False
@@ -99,9 +103,11 @@ class PayNL():
             logging.debug('Creating transaction done: ' + transactionId)
         return transactionId
 
-    def cancelTransaction(self, transactionId):
+    def cancel_transaction(self, transactionId):
+        logging.debug("Cancelling transaction...")
         try:
             url = self.cancelTransactionUrl % transactionId
+            logging.debug("url:%s", url)
             response = requests.patch(
                 url, headers=self.headers, auth=self.credentials)
             logging.debug(response.text)

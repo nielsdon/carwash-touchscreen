@@ -126,6 +126,7 @@
       color: app.buttonTextColor
       on_release:
         root.cancel()
+
 <PaymentWashcard>:
   canvas.before:
     Rectangle:
@@ -281,6 +282,13 @@
       text: "Voltooi betaling\nop PIN terminal"
       font_size: heading_font_size
       color: app.textColor
+    Button:
+      text: "Annuleren"
+      background_color : app.buttonBackgroundColor
+      font_size: default_font_size
+      color: app.buttonTextColor
+      on_release:
+        root.cancel()
 
 <UpgradeWashcardPaymentFailed>:
   canvas.before:

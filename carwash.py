@@ -11,7 +11,7 @@ from kivy.app import App
 from kivy.clock import mainthread
 from kivy.core.window import Window
 from kivy.logger import Logger
-from kivy.uix.screenmanager import NoTransition, ScreenManager
+from kivy.uix.screenmanager import NoTransition, ScreenManager, ScreenManagerException
 from washingOrder import Order
 
 sys.path.append(os.path.join(os.path.dirname(__file__), 'screens'))
@@ -179,9 +179,6 @@ class Carwash(App):
         try:
             if not pi.connected:
                 exit()
-            # LED setup
-            pi.set_mode(int(self.SETTINGS["gpio"]["errorLED"]), pigpio.OUTPUT)
-            pi.set_mode(int(self.SETTINGS["gpio"]["busyLED"]), pigpio.OUTPUT)
             # Machine setup
             pi.set_mode(int(self.SETTINGS["gpio"]["BIT1LED"]), pigpio.OUTPUT)
             pi.set_mode(int(self.SETTINGS["gpio"]["BIT2LED"]), pigpio.OUTPUT)
@@ -219,10 +216,10 @@ class Carwash(App):
             pi.set_pull_up_down(int(self.SETTINGS["gpio"]["stopVehicle"]), pigpio.PUD_DOWN)
 
             # Machine in progress/done
-            pi.callback(int(self.SETTINGS["gpio"]["busyInput"]), pigpio.EITHER_EDGE, self.progress_status_changed)
-            pi.callback(int(self.SETTINGS["gpio"]["errorInput"]), pigpio.EITHER_EDGE, self.error_status_changed)
-            pi.callback(int(self.SETTINGS["gpio"]["highVehicle"]), pigpio.EITHER_EDGE, self.high_vehicle_status_changed)
-            pi.callback(int(self.SETTINGS["gpio"]["stopVehicle"]), pigpio.EITHER_EDGE, self.stop_status_changed)
+            pi.callback(int(self.SETTINGS["gpio"]["busyInput"]), pigpio.EITHER_EDGE, self.show_start_screen)
+            pi.callback(int(self.SETTINGS["gpio"]["errorInput"]), pigpio.EITHER_EDGE, self.show_start_screen)
+            pi.callback(int(self.SETTINGS["gpio"]["highVehicle"]), pigpio.EITHER_EDGE, self.show_start_screen)
+            pi.callback(int(self.SETTINGS["gpio"]["stopVehicle"]), pigpio.EITHER_EDGE, self.show_start_screen)
             logging.debug("GPIO setup completed successfully")
 
         except RuntimeError as e:
@@ -236,79 +233,32 @@ class Carwash(App):
             raise
 
     def clean_up(self):
+        payment = self.sm.get_screen("payment")
+        payment.cancel()
         pi.stop()
 
+    @mainthread
     def changeScreen(self, screenName, *args):
         logging.debug("Showing screen %s", screenName)
-        self.sm.current = screenName
-
-    @mainthread
-    def progress_status_changed(self, *args):
-        logging.debug("PROGRESS: %s", str(pi.read(int(self.SETTINGS["gpio"]["busyInput"]))))
-        if pi.read(int(self.SETTINGS["gpio"]["busyInput"])) == 1:
-            logging.debug("Machine in progress...")
-            pi.write(int(self.SETTINGS["gpio"]["busyLED"]), 1)
-            self.BUSY = True
-            self.show_start_screen()
-        else:
-            logging.debug("Machine done!")
-            pi.write(int(self.SETTINGS["gpio"]["busyLED"]), 0)
-            self.BUSY = False
-            self.show_start_screen()
-
-    @mainthread
-    def error_status_changed(self, *args):
-        logging.debug("ERROR: %s", str(pi.read(int(self.SETTINGS["gpio"]["errorInput"]))))
-        if pi.read(int(self.SETTINGS["gpio"]["errorInput"])) == 1:
-            logging.debug("Error resolved!")
-            # switch on error led
-            self.ERROR = False
-            pi.write(int(self.SETTINGS["gpio"]["errorLED"]), 0)
-            self.show_start_screen()
-        else:
-            logging.debug("Error detected!")
-            # switch on error led
-            self.ERROR = True
-            pi.write(int(self.SETTINGS["gpio"]["errorLED"]), 1)
-            self.show_start_screen()
-
-    @mainthread
-    def high_vehicle_status_changed(self, *args):
-        logging.debug("HIGH: %s", str(pi.read(int(self.SETTINGS["gpio"]["highVehicle"]))))
-        if pi.read(int(self.SETTINGS["gpio"]["highVehicle"])) == 1:
-            logging.debug("High vehicle detected!")
-            self.HIGH_VEHICLE = True
-            self.show_start_screen()
-        else:
-            logging.debug("High vehicle no longer detected")
-            self.HIGH_VEHICLE = False
-            self.show_start_screen()
-
-    @mainthread
-    def stop_status_changed(self, *args):
-        logging.debug("STOP: %s", str(pi.read(int(self.SETTINGS["gpio"]["stopVehicle"]))))
-        if pi.read(int(self.SETTINGS["gpio"]["stopVehicle"])) == 1:
-            logging.debug("Vehicle in position")
-            self.STOP_VEHICLE = True
-            self.show_start_screen()
-        else:
-            logging.debug("Vehicle not in position")
-            self.STOP_VEHICLE = False
-            self.show_start_screen()
+        try:
+            self.sm.current = screenName
+        except ScreenManagerException as e:
+            logging.error("Error changing screen:")
+            logging.error(e)
 
     @mainthread
     def show_start_screen(self, *args):
         logging.debug("Determining start screen...")
-        if self.ERROR:
+        if pi.read(int(self.SETTINGS["gpio"]["errorInput"])) != 1:
             self.changeScreen("error")
             return True
-        if self.BUSY:
+        if pi.read(int(self.SETTINGS["gpio"]["busyInput"])) == 1:
             self.changeScreen("in_progress")
             return True
-        if not self.STOP_VEHICLE:
+        if pi.read(int(self.SETTINGS["gpio"]["stopVehicle"])) != 1:
             self.changeScreen("move_vehicle")
             return True
-        if self.HIGH_VEHICLE:
+        if pi.read(int(self.SETTINGS["gpio"]["highVehicle"])) != 1:
             self.changeScreen("program_selection_high")
             return True
         self.changeScreen("program_selection")

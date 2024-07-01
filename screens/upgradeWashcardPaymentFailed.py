@@ -10,4 +10,4 @@ class UpgradeWashcardPaymentFailed(Screen):
         app.activeWashcard = ''
         app.washcardTopup = ''
         time.sleep(5)
-        app.changeScreen("program_selection")
+        app.show_start_screen()

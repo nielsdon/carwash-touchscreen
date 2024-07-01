@@ -10,6 +10,13 @@ class PaymentWashcard(Screen):
         app = App.get_running_app()
         washcard = Washcard(app.SETTINGS)
         washcard.readCard()
+        # check if we need to apply a discount
+        if washcard.credit and "creditcardDiscountPercentage" in app.SETTINGS["general"]:
+            logging.debug("Discount:%s",str(app.SETTINGS["general"]["creditcardDiscountPercentage"]))
+            multiplier = (100 - app.SETTINGS["general"]["creditcardDiscountPercentage"]) / 100
+            logging.debug("Old price:%s", str(app.activeOrder.amount))
+            app.activeOrder.amount = app.activeOrder.amount * multiplier
+            logging.debug("New price:%s", str(app.activeOrder.amount))
         if washcard.uid == '':
             app.changeScreen('payment_washcard_card_not_found')
         elif washcard.carwash == '':

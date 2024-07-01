@@ -10,4 +10,4 @@ class PaymentSuccess(Screen):
         app.startMachine()
         if app.TEST_MODE:
             time.sleep(3)
-            app.changeScreen('program_selection')
+            app.show_start_screen()

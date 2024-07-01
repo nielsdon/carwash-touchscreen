@@ -8,4 +8,4 @@ class PaymentWashcardInsufficientBalance(Screen):
         logging.debug("=== Insufficient balance on washcard ===")
         app = App.get_running_app()
         time.sleep(3)
-        app.changeScreen('program_selection')
+        app.show_start_screen()

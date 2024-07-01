@@ -12,4 +12,4 @@ class PaymentMethod(Screen):
 
     def cancel(self):
         app = App.get_running_app()
-        app.changeScreen('program_selection')
+        app.show_start_screen()

@@ -8,4 +8,4 @@ class PaymentWashcardCardNotValid(Screen):
         logging.debug("=== Washcard not valid ===")
         app = App.get_running_app()
         time.sleep(3)
-        app.changeScreen('program_selection')
+        app.show_start_screen()

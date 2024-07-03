@@ -26,14 +26,7 @@ class ProgramSelection(Screen):
         
     def on_enter(self, *args, **kwargs):
         logging.debug("=== Program selection ===")
-        # You can optionally call the superclass's method if needed
         super().on_enter(*args, **kwargs)
-        app = App.get_running_app()
-        # Make sure the selection for high vehicles is shown when returning to program selection
-        if app.HIGH_VEHICLE:
-            logging.debug("High vehicle detected!")
-            # show program selection screen for high vehicles
-            app.changeScreen("program_selection_high")
 
     def selectProgram(self, program):
         app = App.get_running_app()

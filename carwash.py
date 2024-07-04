@@ -76,6 +76,10 @@ class Carwash(App):
     textColor = [0,0,0,1]
     backgroundColor = [1,1,1,1]
     supportPhone = ''
+    stop = 0
+    error = 1
+    high = 0
+    busy = 0
 
     def __init__(self, **kwargs):
         super(Carwash, self).__init__(**kwargs)
@@ -247,10 +251,10 @@ class Carwash(App):
             pi.set_pull_up_down(int(self.SETTINGS["gpio"]["stopVehicle"]), pigpio.PUD_DOWN)
 
             # Machine in progress/done
-            pi.callback(int(self.SETTINGS["gpio"]["busyInput"]), pigpio.EITHER_EDGE, self.show_start_screen)
-            pi.callback(int(self.SETTINGS["gpio"]["errorInput"]), pigpio.EITHER_EDGE, self.show_start_screen)
-            pi.callback(int(self.SETTINGS["gpio"]["highVehicle"]), pigpio.EITHER_EDGE, self.show_start_screen)
-            pi.callback(int(self.SETTINGS["gpio"]["stopVehicle"]), pigpio.EITHER_EDGE, self.show_start_screen)
+            pi.callback(int(self.SETTINGS["gpio"]["busyInput"]), pigpio.EITHER_EDGE, self.busy_input_changed)
+            pi.callback(int(self.SETTINGS["gpio"]["errorInput"]), pigpio.EITHER_EDGE, self.error_input_changed)
+            pi.callback(int(self.SETTINGS["gpio"]["highVehicle"]), pigpio.EITHER_EDGE, self.high_input_changed)
+            pi.callback(int(self.SETTINGS["gpio"]["stopVehicle"]), pigpio.EITHER_EDGE, self.stop_input_changed)
             logging.debug("GPIO setup completed successfully")
 
         except RuntimeError as e:
@@ -279,18 +283,49 @@ class Carwash(App):
             logging.error(e)
 
     @mainthread
+    def busy_input_changed(self, *args):
+        # only do somethine when value changes
+        if self.busy != pi.read(int(self.SETTINGS["gpio"]["busyInput"])):
+            logging.debug("Input changed: BUSY | value = %s", str(pi.read(int(self.SETTINGS["gpio"]["busyInput"]))))
+            self.busy = pi.read(int(self.SETTINGS["gpio"]["busyInput"]))
+            self.show_start_screen()
+
+    @mainthread
+    def error_input_changed(self, *args):
+        if self.error != pi.read(int(self.SETTINGS["gpio"]["errorInput"])):
+            logging.debug("Input changed: ERROR | value = %s", str(pi.read(int(self.SETTINGS["gpio"]["errorInput"]))))
+            self.error = pi.read(int(self.SETTINGS["gpio"]["errorInput"]))
+            self.show_start_screen()
+
+    @mainthread
+    def high_input_changed(self, *args):
+        if self.high != pi.read(int(self.SETTINGS["gpio"]["highVehicle"])):
+            logging.debug("Input changed: HIGH | value = %s", str(pi.read(int(self.SETTINGS["gpio"]["highVehicle"]))))
+            self.high = pi.read(int(self.SETTINGS["gpio"]["highVehicle"]))
+            # don't interrupt any other screens
+            if self.root.current == "program_selection" or self.root.current == "program_selection_high":
+                self.show_start_screen()
+
+    @mainthread
+    def stop_input_changed(self, *args):
+        if self.stop != pi.read(int(self.SETTINGS["gpio"]["stopVehicle"])):
+            logging.debug("Input changed: STOP | value = %s", str(pi.read(int(self.SETTINGS["gpio"]["stopVehicle"]))))
+            self.stop = pi.read(int(self.SETTINGS["gpio"]["stopVehicle"]))
+            self.show_start_screen()
+
+    @mainthread
     def show_start_screen(self, *args):
         logging.debug("Determining start screen...")
-        if pi.read(int(self.SETTINGS["gpio"]["errorInput"])) != 1:
+        if self.error != 1:
             self.changeScreen("error")
-            return True
-        if pi.read(int(self.SETTINGS["gpio"]["busyInput"])) == 1:
+            return
+        if self.busy == 1:
             self.changeScreen("in_progress")
-            return True
-        if pi.read(int(self.SETTINGS["gpio"]["stopVehicle"])) != 1:
+            return
+        if self.stop != 1:
             self.changeScreen("move_vehicle")
-            return True
-        if pi.read(int(self.SETTINGS["gpio"]["highVehicle"])) == 1:
+            return
+        if self.high == 1:
             self.changeScreen("program_selection_high")
-            return True
+            return
         self.changeScreen("program_selection")

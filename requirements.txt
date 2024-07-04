@@ -10,3 +10,4 @@ pigpio==1.78
 Pygments==2.18.0
 requests==2.32.3
 urllib3==2.2.1
+netifaces==0.10.8

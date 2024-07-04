@@ -5,9 +5,9 @@ import configparser
 import locale
 import logging
 import time
+import netifaces
 import pigpio
 import requests
-import socket
 
 from kivy.app import App
 from kivy.clock import mainthread
@@ -82,14 +82,10 @@ class Carwash(App):
         # Init globals
         self.TEST_MODE = TEST_MODE
         self.CARWASH_ID = CARWASH_ID
-        
-        # Get the hostname
-        hostname = socket.gethostname()
 
         # Get the IP address
-        self.ip_address = socket.gethostbyname(hostname)
+        self.ip_address = self.get_ip_address()
 
-        print(f"Hostname: {hostname}")
         print(f"IP Address: {self.ip_address}")
 
         # Initialize API connection and settings
@@ -113,6 +109,15 @@ class Carwash(App):
         
         self.sm = None
 
+    def get_ip_address(self):
+        interfaces = netifaces.interfaces()
+        for interface in interfaces:
+            addresses = netifaces.ifaddresses(interface)
+            # Check for IPv4 address
+            if netifaces.AF_INET in addresses:
+                ipv4 = addresses[netifaces.AF_INET][0]['addr']
+                if ipv4 != '127.0.0.1':  # Ignore localhost
+                    return ipv4
     def build(self):
         # Create and return the root widget (ScreenManager)
         self.sm = ScreenManager(transition=NoTransition())

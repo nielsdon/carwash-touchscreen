@@ -1,8 +1,8 @@
+import logging
+import locale
 from kivy.uix.screenmanager import Screen
 from kivy.app import App
 from washcard import Washcard
-import logging
-import locale
 
 class PaymentWashcard(Screen):
     def on_enter(self, *args, **kwargs):

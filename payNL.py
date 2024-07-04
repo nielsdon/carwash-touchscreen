@@ -1,20 +1,19 @@
 """An SDK to communicate with Pay.nl API"""
-from requests.auth import HTTPBasicAuth
-import requests
 import configparser
 import logging
 import json
-from washingOrder import Order
+import requests
+from requests.auth import HTTPBasicAuth
+
 
 CONFIG = configparser.ConfigParser()
 CONFIG.read('config.ini')
 class PayNL():
-    transactionStatusUrl = 'https://rest.pay.nl/v2/transactions/%s'
-    createTransactionUrl = 'https://rest.pay.nl/v1/transactions'
-    cancelTransactionUrl = 'https://rest.pay.nl/v2/transactions/%s/cancel'
-    settings = {}
-    
+    """Main Pay.nl class"""
     def __init__(self, settings):
+        self.transactionStatusUrl = 'https://rest.pay.nl/v2/transactions/%s'
+        self.createTransactionUrl = 'https://rest.pay.nl/v2/transactions'
+        self.cancelTransactionUrl = ''
         self.settings = settings
         if CONFIG.get('General', 'testMode') == 'True':
             logging.basicConfig(encoding='utf-8', level=10)
@@ -27,6 +26,7 @@ class PayNL():
         }
 
     def get_transaction_status(self, transactionId):
+        """Retrieve transaction status from Pay.nl"""
         url = self.transactionStatusUrl % transactionId
         status = ''
         try:
@@ -55,8 +55,8 @@ class PayNL():
             if CONFIG.get('General', 'testMode') == 'True':
                 logging.debug('Payment test mode is ON')
                 amount = 0.01
-        except:
-            logging.debug('Payment test mode OFF')
+        except Exception as err:
+            logging.debug('Payment test mode OFF:%s', str(err))
         # END TEST MODE
         data = {
             "serviceId": self.settings["serviceId"],
@@ -86,30 +86,34 @@ class PayNL():
 
         try:
             response = requests.post(
-                url, headers=self.headers, auth=self.credentials, json=data)
+                url, headers=self.headers, auth=self.credentials, json=data, timeout=10)
             responseData = json.loads(response.text)
             logging.debug(responseData)
             if (responseData["orderId"]):
                 transactionId = responseData['orderId']
+                self.cancelTransactionUrl = responseData["cancelUrl"]
             elif (responseData["errors"]):
                 raise Exception(responseData["errors"]["general"]["message"])
             else:
                 raise Exception()
         except requests.exceptions.RequestException as err:
-            logging.error('GENERIC EXCEPTION:\n' + str(err))
+            logging.error('GENERIC EXCEPTION:\n%s', str(err))
         except Exception as err:
-            logging.error("Payment error " + repr(err))
+            logging.error("Payment error %s", repr(err))
         finally:
-            logging.debug('Creating transaction done: ' + transactionId)
+            logging.debug('Creating transaction done: %s', transactionId)
         return transactionId
 
-    def cancel_transaction(self, transactionId):
+    def cancel_transaction(self):
         logging.debug("Cancelling transaction...")
+        if not self.cancelTransactionUrl:
+            logging.error("Cancel Transaction URL not found!")
+            return
         try:
-            url = self.cancelTransactionUrl % transactionId
+            url = self.cancelTransactionUrl
             logging.debug("url:%s", url)
             response = requests.patch(
-                url, headers=self.headers, auth=self.credentials)
+                url, headers=self.headers, auth=self.credentials, timeout=10)
             logging.debug(response.text)
         except requests.exceptions.RequestException as e:
             logging.error('GENERIC EXCEPTION:\n' + str(e))

@@ -92,6 +92,7 @@ class PayNL():
             if (responseData["orderId"]):
                 transactionId = responseData['orderId']
                 self.cancelTransactionUrl = responseData["cancelUrl"]
+                logging.debug("Cancel transaction url:%s", self.cancelTransactionUrl)
             elif (responseData["errors"]):
                 raise Exception(responseData["errors"]["general"]["message"])
             else:
@@ -112,7 +113,7 @@ class PayNL():
         try:
             url = self.cancelTransactionUrl
             logging.debug("url:%s", url)
-            response = requests.patch(
+            response = requests.get(
                 url, headers=self.headers, auth=self.credentials, timeout=10)
             logging.debug(response.text)
         except requests.exceptions.RequestException as e:

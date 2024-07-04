@@ -50,7 +50,7 @@ class Payment(Screen):
         elif self.cancel_transaction.is_set():
             logging.debug('transaction cancelled')
             self.cancel_transaction.clear()
-            self.pay.cancel_transaction(self.transaction_id)
+            self.pay.cancel_transaction()
             app.show_start_screen()
         else:
             logging.debug('some payment error')

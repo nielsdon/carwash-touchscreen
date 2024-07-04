@@ -7,6 +7,8 @@ import logging
 import time
 import pigpio
 import requests
+import socket
+
 from kivy.app import App
 from kivy.clock import mainthread
 from kivy.core.window import Window
@@ -79,6 +81,15 @@ class Carwash(App):
         # Init globals
         self.TEST_MODE = TEST_MODE
         self.CARWASH_ID = CARWASH_ID
+        
+        # Get the hostname
+        hostname = socket.gethostname()
+
+        # Get the IP address
+        self.ip_address = socket.gethostbyname(hostname)
+
+        print(f"Hostname: {hostname}")
+        print(f"IP Address: {self.ip_address}")
 
         # Initialize API connection and settings
         url = f'https://api.washterminalpro.nl/{API_PATH}/login/'
@@ -100,6 +111,14 @@ class Carwash(App):
         # Create and return the root widget (ScreenManager)
         self.sm = ScreenManager(transition=NoTransition())
         self.load_screens()
+        # show the test label with IP address in test mode
+        if TEST_MODE:
+            screen = self.sm.get_screen("program_selection")
+            screen.ids.test_label.text = "TEST - " +self.ip_address
+            screen = self.sm.get_screen("program_selection_high")
+            screen.ids.test_label.text = "TEST - " +self.ip_address
+        
+        # start operation
         self.show_start_screen()
         return self.sm
 

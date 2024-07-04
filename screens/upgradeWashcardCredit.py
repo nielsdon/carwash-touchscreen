@@ -8,4 +8,4 @@ class UpgradeWashcardCredit(Screen):
         logging.debug("=== Attempt topup credit card ===")
         app = App.get_running_app()
         time.sleep(6)
-        app.changeScreen('program_selection')
+        app.show_start_screen()

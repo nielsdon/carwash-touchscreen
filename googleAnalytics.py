@@ -35,7 +35,7 @@ class GoogleAnalytics:
             return
         else:
             self.last_event = event_hash
-
+        logging.debug("Tracking:%s", event_name)
         url = f'https://www.google-analytics.com/mp/collect?measurement_id={self.measurement_id}&api_secret={self.api_secret}'
         headers = {'Content-Type': 'application/json'}
         # Ensure event time is recent

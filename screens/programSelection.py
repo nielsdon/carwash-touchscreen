@@ -26,7 +26,6 @@ class ProgramSelection(Screen):
         
     def on_enter(self, *args, **kwargs):
         logging.debug("=== Program selection ===")
-        # You can optionally call the superclass's method if needed
         super().on_enter(*args, **kwargs)
 
     def selectProgram(self, program):

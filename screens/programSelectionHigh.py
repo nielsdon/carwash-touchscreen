@@ -16,10 +16,9 @@ class ProgramSelectionHigh(Screen):
             textColor = SETTINGS["general"]["buttonTextColor"]
         
         for idx, data in enumerate(SETTINGS["general"]["highSensorPrograms"], start=0):
-            counter = idx + 1
             buttonLabel = SETTINGS["names"][data]
             btn = Button(text=buttonLabel, background_color=backgroundColor, font_size="42sp", color=textColor)
-            btn.bind(on_release=lambda instance, counter=counter: self.selectProgram(data))
+            btn.bind(on_release=lambda instance, program=data: self.selectProgram(program))
             layout.add_widget(btn)
         btn = Button(text="Waspas opwaarderen", background_color=backgroundColor, font_size="42sp", color=textColor)
         btn.bind(on_release=lambda instance: self.upgradeWashcard())

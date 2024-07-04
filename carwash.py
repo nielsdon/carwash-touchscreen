@@ -15,6 +15,7 @@ from kivy.core.window import Window
 from kivy.logger import Logger
 from kivy.uix.screenmanager import NoTransition, ScreenManager, ScreenManagerException
 from washingOrder import Order
+from googleAnalytics import GoogleAnalytics
 
 sys.path.append(os.path.join(os.path.dirname(__file__), 'screens'))
 from paymentFailed import PaymentFailed
@@ -93,7 +94,7 @@ class Carwash(App):
 
         # Initialize API connection and settings
         url = f'https://api.washterminalpro.nl/{API_PATH}/login/'
-        response = requests.post(url, json={"username": API_TOKEN, "password": API_SECRET})
+        response = requests.post(url, json={"username": API_TOKEN, "password": API_SECRET}, timeout=10)
         if response.status_code != 200:
             response.raise_for_status()
 
@@ -106,6 +107,11 @@ class Carwash(App):
         Window.rotation = 90
         Window.show_cursor = False
         self.setupIO()
+        
+        # Setup Google Analytics
+        self.ga = GoogleAnalytics()
+        
+        self.sm = None
 
     def build(self):
         # Create and return the root widget (ScreenManager)
@@ -150,7 +156,7 @@ class Carwash(App):
         url = f'https://api.washterminalpro.nl/{API_PATH}/carwash/{CARWASH_ID}/settings'
         headers = {"Authorization": f'Bearer {JWT_TOKEN}'}
         
-        response = requests.get(url, headers=headers)
+        response = requests.get(url, headers=headers, timeout=10)
         if response.status_code != 200:
             response.raise_for_status()
         #print(response.json())
@@ -163,22 +169,28 @@ class Carwash(App):
             self.backgroundColor = self.SETTINGS["general"]["backgroundColor"]
             self.textColor = self.SETTINGS["general"]["textColor"]
             self.supportPhone = self.SETTINGS["general"]["supportPhone"]
-        print(self.SETTINGS)
         Logger.setLevel(int(self.SETTINGS["general"]["logLevel"]))
         logging.basicConfig(encoding='utf-8', level=int(self.SETTINGS["general"]["logLevel"]))
+        logging.debug(self.SETTINGS)
         
     def selectProgram(self, program):
         logging.debug("Program selected: %s", str(program))
         order = Order(program, self.SETTINGS)
         self.activeOrder = order
+        self.ga.start_new_session()
+        items = [{ "item_id": order.id, "item_name": order.program, "item_brand": CARWASH_ID, "item_category": order.transaction_type, "quantity": 1, "price": order.amount }]
+        self.ga.send_event("add_to_cart", { "currency": "EUR", "value": order.amount, "items": items })
         self.changeScreen("payment_method")
 
     def startMachine(self):
+        # log with google analytics
+        items = [{ "item_id": self.activeOrder.id, "item_name": self.activeOrder.program, "item_brand": CARWASH_ID, "item_category": self.activeOrder.transaction_type, "quantity": 1, "price": self.activeOrder.amount }]
+        self.ga.send_event("purchase", { "transaction_id": self.activeOrder.id, "currency": "EUR", "value": self.activeOrder.amount, "items": items })
         #transform WASH_1 to 1
         programNumber = int(self.activeOrder.program[5:])
-        bin = '{0:04b}'.format(programNumber)
-        logging.debug("Starting machine. Binary: %s", str(bin))
-        arr = list(bin)
+        binProgramNumber = '{0:04b}'.format(programNumber)
+        logging.debug("Starting machine. Binary: %s", str(binProgramNumber))
+        arr = list(binProgramNumber)
         print(arr)
         if int(arr[3]) == 1:
             pi.write(int(self.SETTINGS["gpio"]["BIT1LED"]),0)
@@ -193,6 +205,9 @@ class Carwash(App):
         pi.write(int(self.SETTINGS["gpio"]["BIT2LED"]),1)
         pi.write(int(self.SETTINGS["gpio"]["BIT4LED"]),1)
         pi.write(int(self.SETTINGS["gpio"]["BIT8LED"]),1)
+        
+        # track with google analytics
+        self.ga.send_event("machine_start", { "program": self.activeOrder.program })
 
     def setupIO(self):
         try:
@@ -220,14 +235,6 @@ class Carwash(App):
             logging.debug("BUSY: %s", str(pi.read(int(self.SETTINGS["gpio"]["busyInput"]))))
             logging.debug("HIGH: %s", str(pi.read(int(self.SETTINGS["gpio"]["highVehicle"]))))
 
-            if pi.read(int(self.SETTINGS["gpio"]["stopVehicle"])) == 1:
-                self.STOP_VEHICLE = True
-            if pi.read(int(self.SETTINGS["gpio"]["errorInput"])) == 1:
-                self.ERROR = False
-            if pi.read(int(self.SETTINGS["gpio"]["busyInput"])) == 1:
-                self.BUSY = True
-            if pi.read(int(self.SETTINGS["gpio"]["highVehicle"])) == 1:
-                self.HIGH_VEHICLE = True
             #logging.debug("Inputs: %s %s %s" % (self.SETTINGS["gpio"]["errorInput"],self.SETTINGS["gpio"]["busyInput"],self.SETTINGS["gpio"]["highVehicle"]) )
             pi.set_pull_up_down(int(self.SETTINGS["gpio"]["errorInput"]), pigpio.PUD_DOWN)
             pi.set_pull_up_down(int(self.SETTINGS["gpio"]["busyInput"]), pigpio.PUD_DOWN)
@@ -259,6 +266,7 @@ class Carwash(App):
     @mainthread
     def changeScreen(self, screenName, *args):
         logging.debug("Showing screen %s", screenName)
+        self.ga.send_event("page_view", { "page_title": screenName })
         try:
             self.sm.current = screenName
         except ScreenManagerException as e:
@@ -277,7 +285,7 @@ class Carwash(App):
         if pi.read(int(self.SETTINGS["gpio"]["stopVehicle"])) != 1:
             self.changeScreen("move_vehicle")
             return True
-        if pi.read(int(self.SETTINGS["gpio"]["highVehicle"])) != 1:
+        if pi.read(int(self.SETTINGS["gpio"]["highVehicle"])) == 1:
             self.changeScreen("program_selection_high")
             return True
         self.changeScreen("program_selection")

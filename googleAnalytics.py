@@ -20,7 +20,7 @@ class GoogleAnalytics:
         self.api_secret = config['GA4']['api_secret']
         self.client_id = config['GA4']['client_id'] +'_' +config['General']['carwashId']
         self.event_store = {}
-        self.session_id = None
+        self.session_id = int(time.time())
         self.event_name = ""
         self.event_params = ""
         self.last_event = None  # Variable to store the last sent event
@@ -37,10 +37,10 @@ class GoogleAnalytics:
             self.last_event = event_hash
         logging.debug("Tracking:%s", event_name)
         url = f'https://www.google-analytics.com/mp/collect?measurement_id={self.measurement_id}&api_secret={self.api_secret}'
-        headers = {'Content-Type': 'application/json'}
+        headers = {"Content-Type": "application/json"}
         # Ensure event time is recent
-        event_params['engagement_time_msec'] = event_params.get('engagement_time_msec', '100')
-        event_params['session_id'] = self.session_id
+        event_params["engagement_time_msec"] = event_params.get("engagement_time_msec", "100")
+        event_params["session_id"] = self.session_id
         payload = {
             "client_id": self.client_id,
             "events": [
@@ -50,6 +50,8 @@ class GoogleAnalytics:
                 }
             ]
         }
+        logging.debug("GA4 url:%s", url)
+        logging.debug("GA4 payload:%s", payload)
 
         try:
             response = requests.post(url, headers=headers, data=json.dumps(payload), timeout=10)

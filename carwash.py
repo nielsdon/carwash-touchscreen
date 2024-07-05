@@ -276,6 +276,7 @@ class Carwash(App):
     def changeScreen(self, screenName, *args):
         logging.debug("Showing screen %s", screenName)
         self.ga.send_event("page_view", { "page_title": screenName })
+        logging.debug("Current screen:%s", str(self.sm.current))
         try:
             self.sm.current = screenName
         except ScreenManagerException as e:
@@ -303,7 +304,7 @@ class Carwash(App):
             logging.debug("Input changed: HIGH | value = %s", str(pi.read(int(self.SETTINGS["gpio"]["highVehicle"]))))
             self.high = pi.read(int(self.SETTINGS["gpio"]["highVehicle"]))
             # don't interrupt any other screens
-            if self.root.current == "program_selection" or self.root.current == "program_selection_high":
+            if self.sm.current == "program_selection" or self.sm.current == "program_selection_high":
                 self.show_start_screen()
 
     @mainthread

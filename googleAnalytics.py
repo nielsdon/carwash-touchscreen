@@ -18,7 +18,7 @@ class GoogleAnalytics:
 
         self.measurement_id = config['GA4']['measurement_id']
         self.api_secret = config['GA4']['api_secret']
-        self.client_id = config['GA4']['client_id'] +'_' +config['General']['carwashId']
+        self.client_id = config['GA4']['client_id']
         self.event_store = {}
         self.session_id = int(time.time())
         self.event_name = ""

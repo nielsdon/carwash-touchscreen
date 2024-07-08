@@ -51,7 +51,7 @@ SETTINGS = {}
 JWT_TOKEN = ''
 pi = pigpio.pi()
 if not pi.connected:
-    exit() 
+    exit()
 if TEST_MODE:
     API_PATH = 'dev'
 else:
@@ -188,13 +188,21 @@ class Carwash(App):
         self.activeOrder = order
         self.ga.start_new_session()
         items = [{ "item_id": order.id, "item_name": order.program, "item_brand": CARWASH_ID, "item_category": order.transaction_type, "quantity": 1, "price": order.amount }]
-        self.ga.send_event("add_to_cart", { "currency": "EUR", "value": order.amount, "items": items })
+        self.ga.send_event("add_to_cart", { "currency": "EUR", "value": order.margin, "items": items })
         self.changeScreen("payment_method")
 
+    def washcard_topup(self, amount):
+        self.washcardTopup = amount
+        self.ga.start_new_session()
+        product_name = "TOPUP_" +str(amount)
+        items = [{ "item_id": product_name, "item_name": product_name, "item_brand": CARWASH_ID, "item_category": "TOPUP", "quantity": 1, "price": self.SETTINGS["prices"][product_name] }]
+        self.ga.send_event("add_to_cart", { "currency": "EUR", "value": self.SETTINGS["margins"][product_name], "items": items })
+        
+        
     def startMachine(self):
         # log with google analytics
         items = [{ "item_id": self.activeOrder.id, "item_name": self.activeOrder.program, "item_brand": CARWASH_ID, "item_category": self.activeOrder.transaction_type, "quantity": 1, "price": self.activeOrder.amount }]
-        self.ga.send_event("purchase", { "transaction_id": self.activeOrder.id, "currency": "EUR", "value": self.activeOrder.amount, "items": items })
+        self.ga.send_event("purchase", { "transaction_id": self.activeOrder.id, "currency": "EUR", "value": self.activeOrder.margin, "items": items })
         #transform WASH_1 to 1
         programNumber = int(self.activeOrder.program[5:])
         binProgramNumber = '{0:04b}'.format(programNumber)

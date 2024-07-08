@@ -6,6 +6,7 @@ import logging
 import requests
 import evdev
 from munch import munchify
+from googleAnalytics import GoogleAnalytics
 
 CONFIG = configparser.ConfigParser()
 CONFIG.read('config.ini')
@@ -35,6 +36,7 @@ class Washcard():
             "content-type": "application/json",
             "Authorization": f'Bearer {self.SETTINGS["general"]["jwtToken"]}'
         }
+        self.ga = GoogleAnalytics()
         
     def loadInfo(self):
         info = self.getInfo()

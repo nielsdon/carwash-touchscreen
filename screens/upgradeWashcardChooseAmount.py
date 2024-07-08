@@ -9,7 +9,7 @@ class UpgradeWashcardChooseAmount(Screen):
     def chooseAmount(self, amount):
         logging.debug("=== Selected amount: %s", str(amount))
         app = App.get_running_app()
-        app.washcardTopup = amount
+        app.washcard_topup(amount)
         app.changeScreen("upgrade_washcard_payment")
 
     def cancel(self):

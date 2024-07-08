@@ -42,10 +42,10 @@ class PayNL():
         return str(status)
 
     def payOrder(self, order):
-        return self.startTransaction(order.amount, order.description, order.id, 'WASH')
+        return self.startTransaction(order.amount, order.description, order.id, order.program, order.transaction_type)
 
     def pay_card_upgrade(self, amount=0, card={}):
-        return self.startTransaction(amount, 'washcard top-up', 'top-up', 'TOPUP_'+str(amount))
+        return self.startTransaction(amount, 'washcard top-up', 'top-up', 'TOPUP_'+str(amount), 'TOPUP')
 
     def startTransaction(self, amount=0, description='', reference='', extra1='', extra2=''):
         transactionId = ''

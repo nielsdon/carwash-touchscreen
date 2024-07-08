@@ -9,7 +9,7 @@ SETTINGS = {}
 
 class Order():
     """The order being processed"""
-    program = 0
+    program = ''
     description = ''
     transaction_type = ''
     amount = 0

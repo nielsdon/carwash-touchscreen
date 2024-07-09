@@ -5,6 +5,7 @@ import json
 import logging
 import requests
 import evdev
+import threading
 from munch import munchify
 from googleAnalytics import GoogleAnalytics
 
@@ -37,6 +38,7 @@ class Washcard():
             "Authorization": f'Bearer {self.SETTINGS["general"]["jwtToken"]}'
         }
         self.ga = GoogleAnalytics()
+        self.stop_event = threading.Event()  # Create an event object
         
     def loadInfo(self):
         info = self.getInfo()
@@ -115,7 +117,11 @@ class Washcard():
         finally:
             logging.debug('Creating transaction done')
 
-    def readCard(self):            
+    def stopReading(self):
+        # Set the stop event to interrupt the loop
+        self.stop_event.set()
+
+    def readCard(self, callback):            
         logging.debug("Waiting for NFC UID...")
         
         # Specify the path to the input device
@@ -135,6 +141,11 @@ class Washcard():
         
         # Continuously read events from the input device
         for event in device.read_loop():
+            # Check if the stop event has been set
+            if self.stop_event.is_set():
+                logging.debug("Stopping NFC reader loop.")
+                break
+            
             # Check if the event is a key event
             if event.type == evdev.ecodes.EV_KEY:
                 # Check if it's a key press
@@ -152,4 +163,5 @@ class Washcard():
                         # Print the NFC UID
                         logging.debug('NFC Card found: %s' ,nfc_uid)
                         self.uid = nfc_uid
+                        callback()
                         return self.loadInfo()

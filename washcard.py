@@ -163,5 +163,5 @@ class Washcard():
                         # Print the NFC UID
                         logging.debug('NFC Card found: %s' ,nfc_uid)
                         self.uid = nfc_uid
+                        result = self.loadInfo()
                         callback()
-                        return self.loadInfo()

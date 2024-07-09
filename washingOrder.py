@@ -13,6 +13,7 @@ class Order():
     description = ''
     transaction_type = ''
     amount = 0
+    margin = 0
     id = 0
 
     def __init__(self, program, settings):
@@ -46,6 +47,9 @@ class Order():
         # determine the price
         self.amount = float(SETTINGS["prices"][program]) + float(uptick)
 
+        # determine the margin
+        self.margin = float(SETTINGS["margins"][self.transaction_type])
+        
         # determine order ID
         try:
             file = open('orderId.txt', 'r+')

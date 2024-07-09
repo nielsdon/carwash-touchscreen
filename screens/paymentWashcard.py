@@ -1,35 +1,48 @@
 import logging
 import locale
+import threading
 from kivy.uix.screenmanager import Screen
 from kivy.app import App
 from washcard import Washcard
 
 class PaymentWashcard(Screen):
+    def __init__(self, **kwargs):
+        super(PaymentWashcard, self).__init__(**kwargs)
+        self.washcard = None
+        self.reading_event = threading.Event()
+
     def on_enter(self, *args, **kwargs):
         logging.debug("=== Payment with washcard ===")
         app = App.get_running_app()
-        washcard = Washcard(app.SETTINGS)
-        washcard.readCard()
+        self.washcard = Washcard(app.SETTINGS)
+        
+        # Run the reader in a separate thread
+        reading_thread = threading.Thread(target=self.washcard.readCard, args=(self.processReadResults,))
+        reading_thread.start()
+
+    def processReadResults(self):
+        self.reading_event.set()
+        app = App.get_running_app()
         # check if we need to apply a discount
-        if washcard.credit and "creditcardDiscountPercentage" in app.SETTINGS["general"]:
+        if self.washcard.credit and "creditcardDiscountPercentage" in app.SETTINGS["general"]:
             logging.debug("Discount:%s",str(app.SETTINGS["general"]["creditcardDiscountPercentage"]))
             multiplier = (100 - app.SETTINGS["general"]["creditcardDiscountPercentage"]) / 100
             logging.debug("Old price:%s", str(app.activeOrder.amount))
             app.activeOrder.amount = app.activeOrder.amount * multiplier
             logging.debug("New price:%s", str(app.activeOrder.amount))
-        if washcard.uid == '':
+        if self.washcard.uid == '':
             app.changeScreen('payment_washcard_card_not_found')
-        elif washcard.carwash == '':
+        elif self.washcard.carwash == '':
             app.changeScreen('payment_washcard_card_not_valid')
-        elif int(washcard.carwash.id) != app.CARWASH_ID:
-            logging.debug("Washcard carwash_id: %s", str(washcard.carwash.id))
+        elif int(self.washcard.carwash.id) != app.CARWASH_ID:
+            logging.debug("Washcard carwash_id: %s", str(self.washcard.carwash.id))
             logging.debug("Config carwash_id: %s", str(app.CARWASH_ID))
             screen = app.sm.get_screen('payment_washcard_wrong_carwash')
-            screen.ids.lbl_carwash.text = washcard.carwash.name + '\n' + washcard.carwash.city
+            screen.ids.lbl_carwash.text = self.washcard.carwash.name + '\n' + self.washcard.carwash.city
             app.changeScreen('payment_washcard_wrong_carwash')
         else:
             #checks done: create transaction
-            response = washcard.pay(app.activeOrder)
+            response = self.washcard.pay(app.activeOrder)
             #logging.debug('Response status code: %s', str(response["statusCode"]))
             logging.debug('Response:')
             logging.debug(response)
@@ -42,9 +55,14 @@ class PaymentWashcard(Screen):
                 app.changeScreen('payment_success')
             elif response["statusCode"] == 462:
                 screen = app.sm.get_screen('payment_washcard_insufficient_balance')
-                screen.ids.lbl_balance.text = locale.currency(float(washcard.balance))
+                screen.ids.lbl_balance.text = locale.currency(float(self.washcard.balance))
                 app.changeScreen('payment_washcard_insufficient_balance')
             elif response["statusCode"] == 460:
                 app.changeScreen('payment_washcard_card_not_valid')
             else:
                 app.changeScreen('payment_failed')
+    def cancel(self):
+        logging.debug("Cancelling payment with washcard...")
+        self.washcard.stopReading()
+        app = App.get_running_app()
+        app.show_start_screen()

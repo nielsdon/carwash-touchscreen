@@ -48,3 +48,6 @@ pip install --upgrade pip
 
 # run pip installer to make sure all node modules are installed as listed in requirements.txt
 pip install -r requirements.txt
+
+# ensure correct permissions are set
+chmod +x ./get_hid_device.sh

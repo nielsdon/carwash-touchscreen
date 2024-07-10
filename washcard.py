@@ -4,6 +4,7 @@ import configparser
 import json
 import logging
 import requests
+import subprocess
 import evdev
 import threading
 from munch import munchify
@@ -28,6 +29,7 @@ class Washcard():
     company = ''
     carwash = ''
     credit = 0
+    device = ''
 
     def __init__(self, settings):
         self.SETTINGS = settings
@@ -39,7 +41,23 @@ class Washcard():
         }
         self.ga = GoogleAnalytics()
         self.stop_event = threading.Event()  # Create an event object
-        
+        self.device = self.find_event_device(self.SETTINGS["general"]["nfcReaderVendorIdDeviceId"])
+        if not self.device:
+            raise FileNotFoundError("No matching event device found.")
+
+    def find_event_device(self, vendor_product_id):
+        logging.debug("Finding device %s", vendor_product_id)
+        try:
+            # Run the shell script with the vendor:product ID as argument
+            result = subprocess.run(['./get_hid_device.sh', vendor_product_id], capture_output=True, text=True, check=True)
+            # Capture the output
+            event_device = result.stdout.strip()
+            logging.debug("NFC Device found: %s", event_device)
+            return event_device
+        except subprocess.CalledProcessError as e:
+            logging.error(f"Error finding event device: {e.stderr.strip()}")
+            return None
+
     def loadInfo(self):
         info = self.getInfo()
         if info == {}:
@@ -124,11 +142,9 @@ class Washcard():
     def readCard(self, callback):            
         logging.debug("Waiting for NFC UID...")
         
-        # Specify the path to the input device
-        input_device_path = self.SETTINGS["general"]["nfcReader"]  # Replace 'eventX' with the correct event number
-        
         # Create an instance of the InputDevice class
-        device = evdev.InputDevice(input_device_path)
+        print(f"Using device: {self.device}")
+        device = evdev.InputDevice(self.device)
         
         # Create a dictionary to map key codes to characters
         key_map = {

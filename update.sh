@@ -50,4 +50,4 @@ pip install --upgrade pip
 pip install -r requirements.txt
 
 # ensure correct permissions are set
-chmox +x ./get_hid_device.sh
+chmod +x ./get_hid_device.sh

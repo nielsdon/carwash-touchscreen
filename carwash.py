@@ -64,10 +64,6 @@ class Carwash(App):
     activeOrder = ''
     activeWashcard = ''
     washcardTopup = 0
-    HIGH_VEHICLE = False
-    STOP_VEHICLE = False
-    BUSY = False
-    ERROR = True
     CARWASH_ID = 0
     TEST_MODE = True
     SETTINGS = {}
@@ -76,7 +72,7 @@ class Carwash(App):
     textColor = [0,0,0,1]
     backgroundColor = [1,1,1,1]
     supportPhone = ''
-    stop = 0
+    in_position = 0
     error = 1
     high = 0
     busy = 0
@@ -181,7 +177,7 @@ class Carwash(App):
         Logger.setLevel(int(self.SETTINGS["general"]["logLevel"]))
         logging.basicConfig(encoding='utf-8', level=int(self.SETTINGS["general"]["logLevel"]))
         logging.debug(self.SETTINGS)
-        
+
     def selectProgram(self, program):
         logging.debug("Program selected: %s", str(program))
         order = Order(program, self.SETTINGS)
@@ -197,8 +193,7 @@ class Carwash(App):
         product_name = "TOPUP_" +str(amount)
         items = [{ "item_id": product_name, "item_name": product_name, "item_brand": CARWASH_ID, "item_category": "TOPUP", "quantity": 1, "price": self.SETTINGS["prices"][product_name] }]
         self.ga.send_event("add_to_cart", { "currency": "EUR", "value": self.SETTINGS["margins"][product_name], "items": items })
-        
-        
+
     def startMachine(self):
         # log with google analytics
         items = [{ "item_id": self.activeOrder.id, "item_name": self.activeOrder.program, "item_brand": CARWASH_ID, "item_category": self.activeOrder.transaction_type, "quantity": 1, "price": self.activeOrder.amount }]
@@ -293,7 +288,7 @@ class Carwash(App):
 
     @mainthread
     def busy_input_changed(self, *args):
-        # only do somethine when value changes
+        # only do something when value changes
         if self.busy != pi.read(int(self.SETTINGS["gpio"]["busyInput"])):
             logging.debug("Input changed: BUSY | value = %s", str(pi.read(int(self.SETTINGS["gpio"]["busyInput"]))))
             self.busy = pi.read(int(self.SETTINGS["gpio"]["busyInput"]))
@@ -317,9 +312,9 @@ class Carwash(App):
 
     @mainthread
     def stop_input_changed(self, *args):
-        if self.stop != pi.read(int(self.SETTINGS["gpio"]["stopVehicle"])):
+        if self.in_position != pi.read(int(self.SETTINGS["gpio"]["stopVehicle"])):
             logging.debug("Input changed: STOP | value = %s", str(pi.read(int(self.SETTINGS["gpio"]["stopVehicle"]))))
-            self.stop = pi.read(int(self.SETTINGS["gpio"]["stopVehicle"]))
+            self.in_position = pi.read(int(self.SETTINGS["gpio"]["stopVehicle"]))
             self.show_start_screen()
 
     @mainthread
@@ -331,7 +326,7 @@ class Carwash(App):
         if self.busy == 1:
             self.changeScreen("in_progress")
             return
-        if self.stop != 1:
+        if self.in_position != 1:
             self.changeScreen("move_vehicle")
             return
         if self.high == 1:

@@ -86,8 +86,6 @@ class Carwash(App):
         # Get the IP address
         self.ip_address = self.get_ip_address()
 
-        print(f"IP Address: {self.ip_address}")
-
         # Initialize API connection and settings
         url = f'https://api.washterminalpro.nl/{API_PATH}/login/'
         response = requests.post(url, json={"username": API_TOKEN, "password": API_SECRET}, timeout=10)
@@ -158,7 +156,7 @@ class Carwash(App):
 
     def load_settings(self):
         """loads settings from DB"""
-        url = f'https://api.washterminalpro.nl/{API_PATH}/carwash/{CARWASH_ID}/settings'
+        url = f'https://api.washterminalpro.nl/{API_PATH}/carwash/{self.CARWASH_ID}/settings'
         headers = {"Authorization": f'Bearer {JWT_TOKEN}'}
         
         response = requests.get(url, headers=headers, timeout=10)
@@ -258,6 +256,13 @@ class Carwash(App):
             pi.callback(int(self.SETTINGS["gpio"]["errorInput"]), pigpio.EITHER_EDGE, self.error_input_changed)
             pi.callback(int(self.SETTINGS["gpio"]["highVehicle"]), pigpio.EITHER_EDGE, self.high_input_changed)
             pi.callback(int(self.SETTINGS["gpio"]["stopVehicle"]), pigpio.EITHER_EDGE, self.stop_input_changed)
+            
+            #store statuses based on initial state of sensors
+            self.busy = pi.read(int(self.SETTINGS["gpio"]["busyInput"]))
+            self.high = pi.read(int(self.SETTINGS["gpio"]["highVehicle"]))
+            self.error = pi.read(int(self.SETTINGS["gpio"]["errorInput"]))
+            self.in_position = pi.read(int(self.SETTINGS["gpio"]["stopVehicle"]))
+
             logging.debug("GPIO setup completed successfully")
 
         except RuntimeError as e:

@@ -6,6 +6,7 @@ import logging
 import requests
 import subprocess
 import evdev
+import select  # Import the select module
 import threading
 from munch import munchify
 from googleAnalytics import GoogleAnalytics
@@ -84,7 +85,6 @@ class Washcard():
         self.balance = info.balance
         self.id = info.id
         self.credit = info.credit
-        return True
 
     def getInfo(self):
         logging.debug('cardinfo(): getting info for card %s', self.uid)
@@ -118,7 +118,7 @@ class Washcard():
 
         url = self.cardTransactionUrl
         data = {
-            "carwash_id": CONFIG.get('General', 'carwashId'),
+            "carwash_id": self.carwash.id,
             "card_id": self.id,
             "amount": amount,
             "description": description,
@@ -155,29 +155,31 @@ class Washcard():
         # Create an empty string to store the NFC UID
         nfc_uid = ""
         
-        # Continuously read events from the input device
-        for event in device.read_loop():
-            # Check if the stop event has been set
-            if self.stop_event.is_set():
-                logging.debug("Stopping NFC reader loop.")
-                break
+        # Set device to non-blocking mode
+        device.grab()
+
+        try:
+            while not self.stop_event.is_set():
+                r, w, x = select.select([device], [], [], 1)  # 1-second timeout
+                if device in r:
+                    for event in device.read():
+                        if event.type == evdev.ecodes.EV_KEY:
+                            if event.value == 1:
+                                key_code = event.code
+                                if key_code in key_map:
+                                    nfc_uid += key_map[key_code]
+                                if key_code == evdev.ecodes.KEY_ENTER:
+                                    logging.debug('NFC Card found: %s', nfc_uid)
+                                    self.uid = nfc_uid
+                                    self.loadInfo()
+                                    callback()
+                                    return
+        except Exception as e:
+            logging.error("Error in NFC read loop: %s", e)
+        finally:
+            device.ungrab()
+            logging.debug("Card UID: %s", self.uid)
+            logging.debug("Exiting NFC reader loop.")
+
             
-            # Check if the event is a key event
-            if event.type == evdev.ecodes.EV_KEY:
-                # Check if it's a key press
-                if event.value == 1:
-                    # Translate the key code to a character
-                    key_code = event.code
-                    
-                    # Check if the key code is in the key map
-                    if key_code in key_map:
-                        # Append the character to the NFC UID string
-                        nfc_uid += key_map[key_code]
-                    
-                    # Check if Enter key is pressed
-                    if key_code == evdev.ecodes.KEY_ENTER:
-                        # Print the NFC UID
-                        logging.debug('NFC Card found: %s' ,nfc_uid)
-                        self.uid = nfc_uid
-                        result = self.loadInfo()
-                        callback()
+            

@@ -6,6 +6,9 @@ from kivy.app import App
 from washcard import Washcard
 
 class PaymentWashcard(Screen):
+    reading_thread = None
+    thread_running = False
+    
     def __init__(self, **kwargs):
         super(PaymentWashcard, self).__init__(**kwargs)
         self.washcard = None
@@ -13,17 +16,24 @@ class PaymentWashcard(Screen):
 
     def on_enter(self, *args, **kwargs):
         logging.debug("=== Payment with washcard ===")
+        if self.thread_running:
+            logging.debug("Reading thread is already running")
+            return
+
         app = App.get_running_app()
         self.washcard = Washcard(app.SETTINGS)
-        
+        self.thread_running = True
+        self.washcard.stop_event.clear()  # Clear the stop event before starting the thread
         # Run the reader in a separate thread
-        reading_thread = threading.Thread(target=self.washcard.readCard, args=(self.processReadResults,))
-        reading_thread.start()
-
+        self.reading_thread = threading.Thread(target=self.washcard.readCard, args=(self.processReadResults,), name="readCard")
+        self.reading_thread.start()
+        
     def processReadResults(self):
-        self.reading_event.set()
+        self.thread_running = False  # Reset the flag when done
         app = App.get_running_app()
         # check if we need to apply a discount
+        logging.debug("Processing card read results....")
+        logging.debug("Card UID: %s", self.washcard.uid)
         if self.washcard.credit and "creditcardDiscountPercentage" in app.SETTINGS["general"]:
             logging.debug("Discount:%s",str(app.SETTINGS["general"]["creditcardDiscountPercentage"]))
             multiplier = (100 - app.SETTINGS["general"]["creditcardDiscountPercentage"]) / 100
@@ -34,9 +44,9 @@ class PaymentWashcard(Screen):
             app.changeScreen('payment_washcard_card_not_found')
         elif self.washcard.carwash == '':
             app.changeScreen('payment_washcard_card_not_valid')
-        elif int(self.washcard.carwash.id) != app.CARWASH_ID:
+        elif int(self.washcard.carwash.id) != app.carwash_id:
             logging.debug("Washcard carwash_id: %s", str(self.washcard.carwash.id))
-            logging.debug("Config carwash_id: %s", str(app.CARWASH_ID))
+            logging.debug("Config carwash_id: %s", str(app.carwash_id))
             screen = app.sm.get_screen('payment_washcard_wrong_carwash')
             screen.ids.lbl_carwash.text = self.washcard.carwash.name + '\n' + self.washcard.carwash.city
             app.changeScreen('payment_washcard_wrong_carwash')
@@ -61,8 +71,15 @@ class PaymentWashcard(Screen):
                 app.changeScreen('payment_washcard_card_not_valid')
             else:
                 app.changeScreen('payment_failed')
+
     def cancel(self):
         logging.debug("Cancelling payment with washcard...")
         self.washcard.stopReading()
+        if self.reading_thread and self.reading_thread.is_alive():
+            self.reading_thread.join(timeout=1)  # Wait for the thread to finish with a timeout
+            if self.reading_thread.is_alive():
+                logging.error("Failed to terminate reading thread")
+                return  # Exit without setting thread_running to False
+        self.thread_running = False  # Reset the flag on successful termination
         app = App.get_running_app()
         app.show_start_screen()

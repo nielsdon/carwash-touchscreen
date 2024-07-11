@@ -12,6 +12,11 @@ class PaymentMethod(Screen):
         app = App.get_running_app()
         app.changeScreen('payment_washcard')
 
+    def selectCoupon(self):
+        print("Coupon clicked")
+        app = App.get_running_app()
+        app.changeScreen('coupon_code')
+        
     def cancel(self):
         print("Cancel clicked")
         app = App.get_running_app()

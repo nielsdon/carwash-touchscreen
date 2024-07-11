@@ -1,6 +1,9 @@
 #:set default_font_size "42sp"
 #:set heading_font_size "60sp"
 #:set error_color 1,0,0,1
+#:set input_background_color 1,1,1,1
+#:set input_text_color 0,0,0,1
+#:set input_font_size "60sp"
 
 <ProgramSelectionHigh>:
   canvas.before:
@@ -55,7 +58,55 @@
       size: self.texture_size
       pos_hint: {'x': 0, 'top': 1.0}  # Position top-left corner
       opacity: 1 if app.TEST_MODE else 0  # Conditional visibility
-        
+
+<CouponCode>:
+  canvas.before:
+    Rectangle:
+      pos: self.pos
+      size: self.size
+    Color:
+      rgba: app.backgroundColor
+  BoxLayout:
+    size: root.width, root.height
+    orientation: 'vertical'
+    Image:
+      source: 'logo.png'
+      size: self.texture_size
+      size_hint_y: 2.5
+    Label:
+      text: "Voer uw kortingscode in:"
+      font_size: heading_font_size
+      color: app.textColor
+    TextInput:
+      text: ""
+      halign: "center"
+      id: text_input
+      hint_text: "Voer code in"
+      on_focus: root.show_keyboard(self)
+      background_color : input_background_color
+      font_size: input_font_size
+      color: input_text_color
+    Button:
+      text: "OK"
+      background_color : app.buttonBackgroundColor
+      font_size: default_font_size
+      color: app.buttonTextColor
+      on_release:
+        root.submit()  
+    Button:
+      text: "Annuleren"
+      background_color : app.buttonBackgroundColor
+      font_size: default_font_size
+      color: app.buttonTextColor
+      on_release:
+        root.cancel()     
+    Widget:
+      # Just a space taker to allow for the popup keyboard
+      size_hint_y: 0.5
+
+<CouponKeyboard>:
+    # Define the layout if needed, or just reference the class to ensure it's recognized
+ 
 <PaymentMethod>:
   canvas.before:
     Rectangle:
@@ -88,6 +139,14 @@
       color: app.buttonTextColor
       on_release:
         root.selectWashcard()
+    Button:
+      text: "Kortingscode"
+      id: button_coupon_code
+      background_color : app.buttonBackgroundColor
+      font_size: default_font_size
+      color: app.buttonTextColor
+      on_release:
+        root.selectCoupon()
     Button:
       text: "Annuleren"
       background_color : app.buttonBackgroundColor

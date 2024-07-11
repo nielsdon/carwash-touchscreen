@@ -43,12 +43,10 @@ os.environ['KIVY_NO_FILELOG'] = '1'  # eliminate file log
 # globals
 CONFIG = configparser.ConfigParser()
 CONFIG.read('config.ini')
-CARWASH_ID = int(CONFIG.get('General', 'carwashId'))
 API_TOKEN = str(CONFIG.get('General', 'apiToken'))
 API_SECRET = str(CONFIG.get('General', 'apiSecret'))
 TEST_MODE = bool(CONFIG.get('General', 'testMode') == 'True')
 SETTINGS = {}
-JWT_TOKEN = ''
 pi = pigpio.pi()
 if not pi.connected:
     exit()
@@ -64,7 +62,8 @@ class Carwash(App):
     activeOrder = ''
     activeWashcard = ''
     washcardTopup = 0
-    CARWASH_ID = 0
+    carwash_id = 0
+    jwt_token = ''
     TEST_MODE = True
     SETTINGS = {}
     buttonBackgroundColor = [1,1,1,1]
@@ -76,12 +75,12 @@ class Carwash(App):
     error = 1
     high = 0
     busy = 0
+    carwash_name = ''
 
     def __init__(self, **kwargs):
         super(Carwash, self).__init__(**kwargs)
         # Init globals
         self.TEST_MODE = TEST_MODE
-        self.CARWASH_ID = CARWASH_ID
 
         # Get the IP address
         self.ip_address = self.get_ip_address()
@@ -93,8 +92,9 @@ class Carwash(App):
             response.raise_for_status()
 
         responseData = response.json()
-        globals()['JWT_TOKEN'] = responseData["jwt"]
-        globals()['CARWASH_ID'] = responseData["carwash_id"]
+        self.carwash_name = responseData["carwash_name"]
+        self.carwash_id = responseData["carwash_id"]
+        self.jwt_token = responseData["jwt"]
         self.load_settings()
 
         # Setup window and screen manager
@@ -156,8 +156,8 @@ class Carwash(App):
 
     def load_settings(self):
         """loads settings from DB"""
-        url = f'https://api.washterminalpro.nl/{API_PATH}/carwash/{self.CARWASH_ID}/settings'
-        headers = {"Authorization": f'Bearer {JWT_TOKEN}'}
+        url = f'https://api.washterminalpro.nl/{API_PATH}/carwash/{self.carwash_id}/settings'
+        headers = {"Authorization": f'Bearer {self.jwt_token}'}
         
         response = requests.get(url, headers=headers, timeout=10)
         if response.status_code != 200:
@@ -165,8 +165,8 @@ class Carwash(App):
         #print(response.json())
         self.SETTINGS = response.json()
         if "general" in self.SETTINGS:
-            self.SETTINGS["general"]["jwtToken"] = JWT_TOKEN
-            self.SETTINGS["general"]["carwashId"] = CARWASH_ID
+            self.SETTINGS["general"]["jwtToken"] = self.jwt_token
+            self.SETTINGS["general"]["carwashId"] = self.carwash_id
             self.buttonBackgroundColor = self.SETTINGS["general"]["buttonBackgroundColor"]
             self.buttonTextColor = self.SETTINGS["general"]["buttonTextColor"]
             self.backgroundColor = self.SETTINGS["general"]["backgroundColor"]
@@ -181,21 +181,21 @@ class Carwash(App):
         order = Order(program, self.SETTINGS)
         self.activeOrder = order
         self.ga.start_new_session()
-        items = [{ "item_id": order.id, "item_name": order.program, "item_brand": CARWASH_ID, "item_category": order.transaction_type, "quantity": 1, "price": order.amount }]
-        self.ga.send_event("add_to_cart", { "currency": "EUR", "value": order.margin, "items": items })
+        items = [{ "item_id": str(program), "item_name": order.description, "item_brand": self.carwash_name, "item_category": order.transaction_type, "quantity": 1, "price": order.amount }]
+        self.ga.send_event("add_to_cart", { "currency": "EUR", "value": order.margin, "items": items, "location": "Netherlands" })
         self.changeScreen("payment_method")
 
     def washcard_topup(self, amount):
         self.washcardTopup = amount
         self.ga.start_new_session()
         product_name = "TOPUP_" +str(amount)
-        items = [{ "item_id": product_name, "item_name": product_name, "item_brand": CARWASH_ID, "item_category": "TOPUP", "quantity": 1, "price": self.SETTINGS["prices"][product_name] }]
-        self.ga.send_event("add_to_cart", { "currency": "EUR", "value": self.SETTINGS["margins"][product_name], "items": items })
+        items = [{ "item_id": product_name, "item_name": product_name, "item_brand": self.carwash_name, "item_category": "TOPUP", "quantity": 1, "price": self.SETTINGS["prices"][product_name] }]
+        self.ga.send_event("add_to_cart", { "currency": "EUR", "value": self.SETTINGS["margins"][product_name], "items": items, "location": "Netherlands" })
 
     def startMachine(self):
         # log with google analytics
-        items = [{ "item_id": self.activeOrder.id, "item_name": self.activeOrder.program, "item_brand": CARWASH_ID, "item_category": self.activeOrder.transaction_type, "quantity": 1, "price": self.activeOrder.amount }]
-        self.ga.send_event("purchase", { "transaction_id": self.activeOrder.id, "currency": "EUR", "value": self.activeOrder.margin, "items": items })
+        items = [{ "item_id": self.activeOrder.program, "item_name": self.activeOrder.description, "item_brand": self.carwash_name, "item_category": self.activeOrder.transaction_type, "quantity": 1, "price": self.activeOrder.amount }]
+        self.ga.send_event("purchase", { "transaction_id": self.activeOrder.id, "currency": "EUR", "value": self.activeOrder.margin, "items": items, "location": "Netherlands" })
         #transform WASH_1 to 1
         programNumber = int(self.activeOrder.program[5:])
         binProgramNumber = '{0:04b}'.format(programNumber)
@@ -283,7 +283,7 @@ class Carwash(App):
     @mainthread
     def changeScreen(self, screenName, *args):
         logging.debug("Showing screen %s", screenName)
-        self.ga.send_event("page_view", { "page_title": screenName })
+        self.ga.send_event("page_view", { "page_title": screenName, "location": "Netherlands", "firebase_screen": screenName, "firebase_screen_class": "python", "firebase_screen_id": screenName })
         logging.debug("Current screen:%s", str(self.sm.current))
         try:
             self.sm.current = screenName

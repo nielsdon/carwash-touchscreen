@@ -165,6 +165,13 @@
       text: "Houd de waspas\nvoor de lezer"
       font_size: heading_font_size
       color: app.textColor
+    Button:
+      text: "Annuleren"
+      background_color : app.buttonBackgroundColor
+      font_size: default_font_size
+      color: app.buttonTextColor
+      on_release:
+        root.cancel()
 
 <UpgradeWashcardChooseAmount>:
   canvas.before:

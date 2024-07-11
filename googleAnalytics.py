@@ -11,12 +11,17 @@ class GoogleAnalytics:
         # Load credentials from the config.ini file
         config = configparser.ConfigParser()
         config.read(config_path)
+        if 'measurement_id' in config['GA4']:
+            self.measurement_id = config['GA4']['measurement_id']
         if config.get('General', 'testMode') == 'True':
             logging.basicConfig(encoding='utf-8', level=10)
+            if 'measurement_id_dev' in config['GA4']:
+                self.measurement_id = config['GA4']['measurement_id_dev']
         else:
+            if 'measurement_id_prod' in config['GA4']:
+                self.measurement_id = config['GA4']['measurement_id_prod']
             logging.basicConfig(encoding='utf-8', level=50)
 
-        self.measurement_id = config['GA4']['measurement_id']
         self.api_secret = config['GA4']['api_secret']
         self.client_id = config['GA4']['client_id']
         self.event_store = {}
@@ -27,9 +32,12 @@ class GoogleAnalytics:
 
     def start_new_session(self):
         self.session_id = int(time.time())
-        self.send_event('session_start', {})
+        if self.measurement_id:
+            self.send_event('session_start', {})
 
     def send_event(self, event_name, event_params):
+        if not self.measurement_id:
+            return True
         event_hash = self.get_event_hash(event_name, event_params)
         if event_hash == self.last_event:
             return
@@ -53,18 +61,19 @@ class GoogleAnalytics:
         logging.debug("GA4 url:%s", url)
         logging.debug("GA4 payload:%s", payload)
 
-        try:
-            response = requests.post(url, headers=headers, data=json.dumps(payload), timeout=10)
-            response.raise_for_status()  # Raise HTTPError for bad responses (4xx and 5xx)
-            logging.debug("Event sent successfully!")
-        except requests.exceptions.HTTPError as http_err:
-            logging.error(f"HTTP error occurred: {http_err}")
-        except requests.exceptions.ConnectionError as conn_err:
-            logging.error(f"Connection error occurred: {conn_err}")
-        except requests.exceptions.Timeout as timeout_err:
-            logging.error(f"Timeout error occurred: {timeout_err}")
-        except requests.exceptions.RequestException as req_err:
-            logging.error(f"An error occurred: {req_err}")
+        if self.measurement_id:
+            try:
+                response = requests.post(url, headers=headers, data=json.dumps(payload), timeout=10)
+                response.raise_for_status()  # Raise HTTPError for bad responses (4xx and 5xx)
+                logging.debug("Event sent successfully!")
+            except requests.exceptions.HTTPError as http_err:
+                logging.error(f"HTTP error occurred: {http_err}")
+            except requests.exceptions.ConnectionError as conn_err:
+                logging.error(f"Connection error occurred: {conn_err}")
+            except requests.exceptions.Timeout as timeout_err:
+                logging.error(f"Timeout error occurred: {timeout_err}")
+            except requests.exceptions.RequestException as req_err:
+                logging.error(f"An error occurred: {req_err}")
 
     def add_event_to_store(self, event_name, event_params):
         """Store events to keep them from sending directly"""
@@ -74,6 +83,8 @@ class GoogleAnalytics:
 
     def send_stored_events(self):
         """Send the previously stored events"""
+        if not self.measurement_id:
+            return True
         for event_name, events in self.event_store.items():
             for event_params in events:
                 self.send_event(event_name, event_params)

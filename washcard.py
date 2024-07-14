@@ -118,7 +118,7 @@ class Washcard():
 
         url = self.cardTransactionUrl
         data = {
-            "carwash_id": self.carwash.id,
+            "carwash_id": self.SETTINGS["general"]["carwashId"],
             "card_id": self.id,
             "amount": amount,
             "description": description,

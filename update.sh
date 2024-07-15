@@ -32,22 +32,22 @@ fi
 #rm *.kv
 
 # Print an update message
-echo "Updating $project, branch: ${branch}"
+#echo "Updating $project, branch: ${branch}"
 
 # Download the zip archive from the GitHub repository, using the access token for authentication
-curl -L -H "Authorization: token ${GITHUB_ACCESS_TOKEN}" -o archive.tar.gz https://github.com/nielsdon/${project}/archive/refs/heads/${branch}.tar.gz
+curl -sS -L -H "Authorization: token ${GITHUB_ACCESS_TOKEN}" -o archive.tar.gz https://github.com/nielsdon/${project}/archive/refs/heads/${branch}.tar.gz
 
 # Extract the downloaded zip file, stripping the leading directory component
-tar -xvf archive.tar.gz --strip-components=1
+tar -xvf archive.tar.gz --strip-components=1 > /dev/null 2>&1
 
 # Clean up
 rm archive.tar.gz
 
 # update the pip installer
-pip install --upgrade pip
+pip install --upgrade pip > /dev/null 2>&1
 
 # run pip installer to make sure all node modules are installed as listed in requirements.txt
-pip install -r requirements.txt
+pip install -r requirements.txt > /dev/null 2>&1
 
 # ensure correct permissions are set
 chmod +x ./get_hid_device.sh

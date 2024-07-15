@@ -58,3 +58,5 @@ hdmi_cvt 1280 800 60 6 0 0 0
 hdmi_drive=1
 #display_rotate=1
 enable_uart=0
+
+disable_splash=1

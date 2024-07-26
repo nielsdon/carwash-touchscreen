@@ -1,7 +1,7 @@
 """A Helper class to structure the washing orders"""
 import configparser
 import logging
-from datetime import datetime
+from datetime import datetime, time
 
 CONFIG = configparser.ConfigParser()
 CONFIG.read('config.ini')
@@ -30,19 +30,7 @@ class Order():
         self.transaction_type = program.split("_")[0]
 
         #additional price for manned days
-        uptick = 0
-        if "mannedDays" in SETTINGS["general"]:
-            now = datetime.now()
-            # Get the weekday number (0 = Monday, 1 = Tuesday, ..., 6 = Sunday)
-            weekday_number = now.weekday()
-            logging.info("Manned days applicable, checking if today is manned day...")
-            if weekday_number in SETTINGS["general"]["mannedDays"]:
-                uptick = SETTINGS["general"]["mannedUptick"]
-                logging.info("Yes: Uptick is €%s", str(uptick))
-            else:
-                logging.info("Nope!")
-        else:
-            logging.info("No uptick today")
+        uptick = self.get_uptick()
 
         # determine the price
         self.amount = float(SETTINGS["prices"][program]) + float(uptick)
@@ -64,3 +52,31 @@ class Order():
             logging.debug('New order id: %s', str(self.id))
         finally:
             file.close()
+
+    def get_uptick(self):
+        # Get the current datetime
+        now = datetime.now()
+        current_weekday = now.weekday()
+        current_time = now.time()
+        
+        manned_days = SETTINGS["general"]["mannedDays"]
+        logging.debug("Current time: %s", current_time)
+        logging.debug("Current current_weekday: %s", str(current_weekday))
+            
+        for day in manned_days:
+            logging.debug("Day:")
+            logging.debug(day)
+            logging.debug("Comparing weekday %s and %s", str(day["weekday"]), str(current_weekday))
+            if day["weekday"] == current_weekday:
+                if "start" in day and "end" in day:
+                    if self.is_within_time_range(day["start"], day["end"], current_time):
+                        print("The current date and time are within the manned time ranges.")
+                        return SETTINGS["general"]["mannedUptick"]
+        print("The current date and time are not within the manned time ranges.")
+        return 0
+        
+    # Function to check if current time is within range
+    def is_within_time_range(self, start, end, current_time):
+        start_time = time.fromisoformat(start)
+        end_time = time.fromisoformat(end)
+        return start_time <= current_time <= end_time

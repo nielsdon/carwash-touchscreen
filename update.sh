@@ -1,5 +1,5 @@
 # Set the project and branch variables
-project='carwash-touchscreen-dist'
+project='carwash-touchscreen'
 branch=$1
 
 # Validate the branch name
@@ -17,12 +17,6 @@ if [ "${branch}" != "develop" ] && [ "${branch}" != "main" ]; then
     branch="main"  # or set to "" if you prefer
   fi
 fi
-
-# clean up first
-rm *.py
-rm *.kv
-rm *.txt
-rm *.png
 
 # Print an update message
 #echo "Updating $project, branch: ${branch}"

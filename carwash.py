@@ -16,6 +16,7 @@ from kivy.logger import Logger
 from kivy.uix.screenmanager import NoTransition, ScreenManager, ScreenManagerException
 from washingOrder import Order
 from googleAnalytics import GoogleAnalytics
+from statusLight import Status_light
 
 sys.path.append(os.path.join(os.path.dirname(__file__), 'screens'))
 from paymentFailed import PaymentFailed
@@ -75,6 +76,7 @@ class Carwash(App):
     error = 1
     high = 0
     busy = 0
+    status_light = None
     carwash_name = ''
 
     def __init__(self, **kwargs):
@@ -101,10 +103,10 @@ class Carwash(App):
         Window.rotation = 90
         Window.show_cursor = False
         self.setupIO()
-        
+
         # Setup Google Analytics
         self.ga = GoogleAnalytics()
-        
+
         self.sm = None
 
     def get_ip_address(self):
@@ -193,6 +195,9 @@ class Carwash(App):
         self.ga.send_event("add_to_cart", { "currency": "EUR", "value": self.SETTINGS["margins"][product_name], "items": items, "location": "Netherlands" })
 
     def startMachine(self):
+        # switch on status light
+        if(self.status_light):
+            self.status_light.starting()
         # log with google analytics
         items = [{ "item_id": self.activeOrder.program, "item_name": self.activeOrder.description, "item_brand": self.carwash_name, "item_category": self.activeOrder.transaction_type, "quantity": 1, "price": self.activeOrder.amount }]
         self.ga.send_event("purchase", { "transaction_id": self.activeOrder.id, "currency": "EUR", "value": self.activeOrder.margin, "items": items, "location": "Netherlands" })
@@ -223,6 +228,12 @@ class Carwash(App):
         try:
             if not pi.connected:
                 exit()
+            
+            #status led setup
+            if(self.SETTINGS["gpio"]["statusLED_red"] and self.SETTINGS["gpio"]["statusLED_green"] and self.SETTINGS["gpio"]["statusLED_blue"]):
+                rgb = [int(self.SETTINGS["gpio"]["statusLED_red"]), int(self.SETTINGS["gpio"]["statusLED_green"]), int(self.SETTINGS["gpio"]["statusLED_blue"])]
+                self.status_light = Status_light(rgb)
+            
             # Machine setup
             pi.set_mode(int(self.SETTINGS["gpio"]["BIT1LED"]), pigpio.OUTPUT)
             pi.set_mode(int(self.SETTINGS["gpio"]["BIT2LED"]), pigpio.OUTPUT)
@@ -325,16 +336,31 @@ class Carwash(App):
     @mainthread
     def show_start_screen(self, *args):
         logging.debug("Determining start screen...")
+        # ERROR
         if self.error != 1:
+            if(self.status_light):
+                self.status_light.error()
             self.changeScreen("error")
             return
+        # BUSY
         if self.busy == 1:
+            if(self.status_light):
+                self.status_light.busy()
             self.changeScreen("in_progress")
             return
+        # STOP
         if self.in_position != 1:
+            if(self.status_light):
+                self.status_light.stop()
             self.changeScreen("move_vehicle")
             return
+        # HIGH
         if self.high == 1:
+            if(self.status_light):
+                self.status_light.high()
             self.changeScreen("program_selection_high")
             return
+        # nothing special going on: turning off light
+        if(self.status_light):
+            self.status_light.off()
         self.changeScreen("program_selection")

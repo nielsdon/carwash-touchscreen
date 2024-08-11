@@ -1,12 +1,3 @@
-# Source the file containing the environment variables
-source .env
-
-# Check if GITHUB_ACCESS_TOKEN is set
-if [ -z "${GITHUB_ACCESS_TOKEN}" ]; then
-  echo "Error: GITHUB_ACCESS_TOKEN is not set."
-  exit 1
-fi
-
 # Set the project and branch variables
 project='carwash-touchscreen'
 branch=$1
@@ -27,15 +18,11 @@ if [ "${branch}" != "develop" ] && [ "${branch}" != "main" ]; then
   fi
 fi
 
-# clean up first
-#rm *.py
-#rm *.kv
-
 # Print an update message
 #echo "Updating $project, branch: ${branch}"
 
 # Download the zip archive from the GitHub repository, using the access token for authentication
-curl -sS -L -H "Authorization: token ${GITHUB_ACCESS_TOKEN}" -o archive.tar.gz https://github.com/nielsdon/${project}/archive/refs/heads/${branch}.tar.gz
+curl -sS -L -o archive.tar.gz https://github.com/nielsdon/${project}/archive/refs/heads/${branch}.tar.gz
 
 # Extract the downloaded zip file, stripping the leading directory component
 tar -xvf archive.tar.gz --strip-components=1 > /dev/null 2>&1

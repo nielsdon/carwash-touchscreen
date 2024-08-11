@@ -44,7 +44,7 @@ class Washcard():
         self.stop_event = threading.Event()  # Create an event object
         self.device = self.find_event_device(self.SETTINGS["general"]["nfcReaderVendorIdDeviceId"])
         if not self.device:
-            raise FileNotFoundError("No matching event device found.")
+            logging.error("NFC Reader not found")
 
     def find_event_device(self, vendor_product_id):
         logging.debug("Finding device %s", vendor_product_id)

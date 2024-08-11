@@ -60,3 +60,5 @@ hdmi_drive=1
 enable_uart=0
 
 disable_splash=1
+framebuffer_width=1280
+framebuffer_height=720

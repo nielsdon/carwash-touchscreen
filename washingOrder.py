@@ -34,6 +34,7 @@ class Order():
 
         # determine the price
         self.amount = float(SETTINGS["prices"][program]) + float(uptick)
+        print("Price: " +str(SETTINGS["prices"][program]) +" + " +str(uptick) +" = " +str(self.amount))
 
         # determine the margin
         self.margin = float(SETTINGS["margins"][self.transaction_type])

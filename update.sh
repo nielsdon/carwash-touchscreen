@@ -37,4 +37,10 @@ pip install --upgrade pip > /dev/null 2>&1
 pip install -r requirements.txt > /dev/null 2>&1
 
 # ensure correct permissions are set
-chmod +x ./get_hid_device.sh
+chmod +x *.sh
+
+# update and start influxDB reporting
+sudo chown telegraf:telegraf ./get_cpu_temp.sh
+sudo cp ./get_cpu_temp.sh /usr/local/bin/.
+sudo cp telegraf.conf /etc/telegraf/.
+sudo systemctl restart telegraf

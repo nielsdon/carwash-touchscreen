@@ -529,6 +529,13 @@
       text: "Plaats uw auto"
       font_size: heading_font_size
       color: app.textColor
+    Button:
+      text: "Waspas opwaarderen"
+      background_color : app.buttonBackgroundColor
+      font_size: default_font_size
+      color: app.buttonTextColor
+      on_release:
+        root.upgrade_washcard()
 
 <Error>:
   canvas.before:

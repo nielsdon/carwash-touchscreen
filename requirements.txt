@@ -1,4 +1,4 @@
-certifi==2024.2.2
+certifi==2024.07.04
 charset-normalizer==3.3.2
 colorzero==2.0
 distlib==0.3.8
@@ -29,5 +29,5 @@ pyudev==0.24.3
 pyusb==1.2.1
 requests==2.32.3
 RPi.GPIO==0.7.1
-urllib3==2.2.1
+urllib3==2.2.2
 virtualenv==20.26.2

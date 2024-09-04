@@ -19,10 +19,7 @@ class ProgramSelection(Screen):
             buttonLabel = SETTINGS["names"][data]
             btn = Button(text=buttonLabel, background_color=backgroundColor, font_size="42sp", color=textColor)
             btn.bind(on_release=lambda instance, program=data: self.selectProgram(program))
-            layout.add_widget(btn)
-        btn = Button(text="Waspas opwaarderen", background_color=backgroundColor, font_size="42sp", color=textColor)
-        btn.bind(on_release=lambda instance: self.upgradeWashcard())
-        layout.add_widget(btn)        
+            layout.add_widget(btn)      
         
     def on_enter(self, *args, **kwargs):
         logging.debug("=== Program selection ===")
@@ -31,7 +28,3 @@ class ProgramSelection(Screen):
     def selectProgram(self, program):
         app = App.get_running_app()
         app.selectProgram(program)
-
-    def upgradeWashcard(self):
-        app = App.get_running_app()
-        app.changeScreen("upgrade_washcard_read_card")

@@ -53,8 +53,12 @@ if not pi.connected:
     exit()
 if TEST_MODE:
     API_PATH = 'dev'
+    os.environ['KIVY_NO_CONSOLELOG'] = '0'  # Enable console logging
+    os.environ['KIVY_LOG_LEVEL'] = 'debug'  # Set log level to debug
 else:
     API_PATH = 'v1'
+    os.environ['KIVY_NO_CONSOLELOG'] = '0'  # Enable console logging
+    os.environ['KIVY_LOG_LEVEL'] = 'debug'  # Set log level to debug
 
 locale.setlocale(locale.LC_ALL, 'nl_NL.UTF-8')
 
@@ -230,7 +234,7 @@ class Carwash(App):
                 exit()
             
             #status led setup
-            if(self.SETTINGS["gpio"]["statusLED_red"] and self.SETTINGS["gpio"]["statusLED_green"] and self.SETTINGS["gpio"]["statusLED_blue"]):
+            if("statusLED_red" in self.SETTINGS["gpio"] and "statusLED_green" in self.SETTINGS["gpio"] and "statusLED_blue" in self.SETTINGS["gpio"]):
                 rgb = [int(self.SETTINGS["gpio"]["statusLED_red"]), int(self.SETTINGS["gpio"]["statusLED_green"]), int(self.SETTINGS["gpio"]["statusLED_blue"])]
                 self.status_light = Status_light(rgb)
             

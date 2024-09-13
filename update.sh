@@ -12,9 +12,9 @@ if [ "${branch}" != "develop" ] && [ "${branch}" != "main" ]; then
   if [ "$TEST_MODE" ]; then
     # Set the branch variable to 'develop'
     branch="develop"
-    export KIVY_NO_FILELOG=1  # Disable file logging
-    export KIVY_NO_CONSOLELOG=0  # Enable console logging
-    export KIVY_LOG_LEVEL=debug  # Set log level to debug (all messages will be shown)
+    unset KIVY_NO_FILELOG  # Disable file logging
+    unset KIVY_NO_CONSOLELOG  # Enable console logging
+    unset KIVY_LOG_LEVEL  # Set log level to debug (all messages will be shown)
   else
     # Set the branch variable to some default value or leave it empty
     branch="main"  # or set to "" if you prefer

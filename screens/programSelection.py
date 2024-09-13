@@ -17,7 +17,7 @@ class ProgramSelection(Screen):
         
         for idx, data in enumerate(SETTINGS["general"]["defaultPrograms"], start=0):
             buttonLabel = SETTINGS["names"][data]
-            btn = Button(text=buttonLabel, background_color=backgroundColor, font_size="42sp", color=textColor)
+            btn = Button(text=buttonLabel, background_color=backgroundColor, background_normal='', font_size="42sp", color=textColor)
             btn.bind(on_release=lambda instance, program=data: self.selectProgram(program))
             layout.add_widget(btn)      
         

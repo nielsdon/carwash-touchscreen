@@ -162,7 +162,7 @@ class Carwash(App):
 
     def load_settings(self):
         """loads settings from DB"""
-        url = f'https://api.washterminalpro.nl/{API_PATH}/carwash/{self.carwash_id}/settings'
+        url = f'https://api.washterminalpro.nl/{API_PATH}/carwash'
         headers = {"Authorization": f'Bearer {self.jwt_token}'}
         
         response = requests.get(url, headers=headers, timeout=10)

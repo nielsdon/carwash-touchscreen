@@ -2,50 +2,41 @@
 #:set heading_font_size "60sp"
 #:set error_color 1,0,0,1
 
-<ProgramSelectionHigh>:
+<BorderedButton@Button>:
+  background_color: app.buttonBackgroundColor
+  background_normal: ''  # Disable the default background image
+  height: 200
+  font_size: default_font_size
+  color: app.buttonTextColor
   canvas.before:
     Color:
-      rgba: 1,1,1,1
+      rgba: 1, 1, 1, 1  # Border color
+    Line:
+      width: 3  # Border thickness
+      rectangle: self.x, self.y, self.width, self.height
+
+<FullWidthImage@Image>:
+  size_hint_y: None
+  size_hint_x: None
+  width: self.parent.width
+  height: self.parent.width/self.image_ratio
+  allow_stretch: True  # Allow stretching to fill the width
+  keep_ratio: True  # Maintain aspect ratio
+
+<BaseLayout@BoxLayout>:
+  canvas.before:
+    Color:
+      rgba: 1, 1, 1, 1
     Rectangle:
       pos: self.pos
       size: self.size
-  RelativeLayout:
-    size: root.width, root.height
-    BoxLayout:
-      orientation: 'vertical'
-      size: root.width, root.height
-      id: selectionLayout
-      Image:
-        source: 'logo.png'
-        size: self.texture_size
-    Label:
-      id: test_label
-      text: "TEST"
-      font_size: '20sp'
-      color: error_color
-      size_hint: None, None
-      size: self.texture_size
-      pos_hint: {'x': 0, 'top': 1.0}  # Position top-left corner
-      opacity: 1 if app.TEST_MODE else 0  # Conditional visibility
+  orientation: 'vertical'
+  FullWidthImage:
+    source: 'logo.png'
 
 <ProgramSelection>:
-  canvas.before:
-    Rectangle:
-      pos: self.pos
-      size: self.size
-    Color:
-      rgba: app.backgroundColor
-  RelativeLayout:
-    size: root.width, root.height
-    BoxLayout:
-      size: root.width, root.height
-      orientation: 'vertical'
-      id: selectionLayout
-      Image:
-        source: 'logo.png'
-        size: self.texture_size
-        size_hint_y: 2.5
-    # Conditional label
+  BaseLayout:
+    id: selectionLayout
     Label:
       id: test_label
       text: "TEST"
@@ -55,225 +46,135 @@
       size: self.texture_size
       pos_hint: {'x': 0, 'top': 1.0}  # Position top-left corner
       opacity: 1 if app.TEST_MODE else 0  # Conditional visibility
-        
-<PaymentMethod>:
-  canvas.before:
-    Rectangle:
-      pos: self.pos
-      size: self.size
-    Color:
-      rgba: app.backgroundColor
-  BoxLayout:
-    size: root.width, root.height
-    orientation: 'vertical'
-    Image:
-      source: 'logo.png'
+    Label:
+      text: "Maak uw keuze"
+      font_size: heading_font_size
+      color: app.textColor
+
+<ProgramSelectionHigh>:
+  BaseLayout:
+    id: selectionLayout
+    Label:
+      id: test_label
+      text: "TEST"
+      font_size: '20sp'
+      color: error_color
+      size_hint: None, None
       size: self.texture_size
-      size_hint_y: 2.5
+      pos_hint: {'x': 0, 'top': 1.0}  # Position top-left corner
+      opacity: 1 if app.TEST_MODE else 0  # Conditional visibility
+    Label:
+      text: "Maak uw keuze"
+      font_size: heading_font_size
+      color: app.textColor
+
+<PaymentMethod>:
+  BaseLayout:
     Label:
       text: "Kies betaalmethode"
       font_size: heading_font_size
       color: app.textColor
-    Button:
+    BorderedButton:
       text: "PIN"
-      background_color : app.buttonBackgroundColor
-      background_normal: ''  # Disable the default background image
-      font_size: default_font_size
-      color: app.buttonTextColor
       on_release:
         root.selectPin()
-    Button:
+    BorderedButton:
       text: "Waspas"
-      background_color : app.buttonBackgroundColor
-      background_normal: ''  # Disable the default background image
-      font_size: default_font_size
-      color: app.buttonTextColor
       on_release:
         root.selectWashcard()
-    Button:
+    BorderedButton:
       text: "Annuleren"
-      background_color : app.buttonBackgroundColor
-      background_normal: ''  # Disable the default background image
-      font_size: default_font_size
-      color: app.buttonTextColor
       on_release:
         root.cancel()        
 <Payment>:
-  canvas.before:
-    Rectangle:
-      pos: self.pos
-      size: self.size
-    Color:
-      rgba: app.backgroundColor
-  BoxLayout:
-    size: root.width, root.height
-    orientation: 'vertical'
-    Image:
-      source: 'logo.png'
-      size: self.texture_size
-      size_hint_y: 1.5
+  BaseLayout:
     Label:
       text: "Voltooi betaling\nop PIN terminal"
       font_size: heading_font_size
       color: app.textColor
-    Button:
+    BorderedButton:
       text: "Annuleren"
-      background_color : app.buttonBackgroundColor
-      background_normal: ''  # Disable the default background image
-      font_size: default_font_size
-      color: app.buttonTextColor
       on_release:
         root.cancel()
 
 <PaymentWashcard>:
-  canvas.before:
-    Rectangle:
-      pos: self.pos
-      size: self.size
-    Color:
-      rgba: app.backgroundColor
-  BoxLayout:
-    size: root.width, root.height
-    orientation: 'vertical'
-    Image:
-      source: 'logo.png'
-      size: self.texture_size
-      size_hint_y: 1.5
+  BaseLayout:
     Label:
       text: "Houd waspas voor\nde lezer"
       font_size: heading_font_size
       color: app.textColor
-    Button:
+    BorderedButton:
       text: "Annuleren"
-      background_color : app.buttonBackgroundColor
-      background_normal: ''  # Disable the default background image
-      font_size: default_font_size
-      color: app.buttonTextColor
       on_release:
         root.cancel() 
       
 <UpgradeWashcardReadCard>:
-  canvas.before:
-    Rectangle:
-      pos: self.pos
-      size: self.size
-    Color:
-      rgba: app.backgroundColor
-  BoxLayout:
-    size: root.width, root.height
-    orientation: 'vertical'
-    Image:
-      source: 'logo.png'
-      size: self.texture_size
-      size_hint_y: 1.5
+  BaseLayout:
     Label:
       text: "Houd de waspas\nvoor de lezer"
       font_size: heading_font_size
       color: app.textColor
-    Button:
+    BorderedButton:
       text: "Annuleren"
-      background_color : app.buttonBackgroundColor
-      background_normal: ''  # Disable the default background image
-      font_size: default_font_size
-      color: app.buttonTextColor
       on_release:
         root.cancel()
 
 <UpgradeWashcardChooseAmount>:
-  canvas.before:
-    Rectangle:
-      pos: self.pos
-      size: self.size
-    Color:
-      rgba: app.backgroundColor
-  BoxLayout:
-    size: root.width, root.height
-    orientation: 'vertical'
-    Label:
-      text: "Tegoed op waspas:"
-      halign: 'left'
-      text_size: self.size
-      font_size: heading_font_size
-      color: app.textColor
-    Label:
-      id: lbl_balance
-      halign: 'left'
-      text_size: self.size
-      text: '----'
-      font_size: heading_font_size
-      color: app.textColor
-    Label:
-      text: "Wasstraat info"
-      halign: 'left'
-      text_size: self.size
-      font_size: heading_font_size
-      color: app.textColor
-    Label:
-      id: lbl_carwash
-      halign: 'left'
-      text_size: self.size
-      text: "----"
-      font_size: default_font_size
-      color: app.textColor
-    Label:
-      text: "Bedrijfsinfo"
-      halign: 'left'
-      text_size: self.size
-      font_size: heading_font_size
-      color: app.textColor
-    Label:
-      id: lbl_company
-      halign: 'left'
-      text_size: self.size
-      text: "----"
-      font_size: default_font_size
-      color: app.textColor  
+  BaseLayout:
+    BoxLayout:
+      size: root.width, root.height
+      orientation: 'horizontal'
+
+      Label:
+        text: "Saldo:"
+        halign: 'right'
+        text_size: self.size
+        font_size: heading_font_size
+        padding: [0,0,20,0]
+        color: app.textColor
+
+      Label:
+        id: lbl_balance
+        halign: 'left'
+        text_size: self.size
+        text: '----'
+        font_size: heading_font_size
+        padding: [20,0,0,0]
+        color: app.textColor
+
     Label:
       text: "Kies bedrag"
       font_size: heading_font_size
       color: app.textColor
+
     BoxLayout:
-      size: root.width, root.height
       orientation: 'horizontal'
-      Button:
+
+      BorderedButton:
         id: button_topup_20
         text: "€ 20,00"
-        background_color : app.buttonBackgroundColor
-        background_normal: ''  # Disable the default background image
-        font_size: default_font_size
-        color: app.buttonTextColor
         on_release:
           root.chooseAmount(20)
-      Button:
+      BorderedButton:
         id: button_topup_50
         text: "€ 50,00"
-        background_color : app.buttonBackgroundColor
-        background_normal: ''  # Disable the default background image
-        font_size: default_font_size
-        color: app.buttonTextColor
         on_release:
           root.chooseAmount(50)
+
     BoxLayout:
-      size: root.width, root.height
       orientation: 'horizontal'
-      Button:
+
+      BorderedButton:
         id: button_topup_100
         text: "€ 100,00"
-        background_color : app.buttonBackgroundColor
-        background_normal: ''  # Disable the default background image
-        font_size: default_font_size
-        color: app.buttonTextColor
         on_release:
           root.chooseAmount(100)
-      Button:
+      BorderedButton:
         id: button_topup_200
         text: "€ 200,00"
-        background_color : app.buttonBackgroundColor
-        background_normal: ''  # Disable the default background image
-        font_size: default_font_size
-        color: app.buttonTextColor
         on_release:
           root.chooseAmount(200)
+
     Button:
       text: "Annuleren"
       background_color : app.buttonBackgroundColor
@@ -282,21 +183,15 @@
       color: app.buttonTextColor
       on_release:
         root.cancel()
+      canvas.before:
+        Color:
+          rgba: 1, 1, 1, 1
+        Line:
+          width: 3  # Border thickness
+          rectangle: self.x, self.y, self.width, self.height
 
 <UpgradeWashcardPayment>:
-  canvas.before:
-    Rectangle:
-      pos: self.pos
-      size: self.size
-    Color:
-      rgba: app.backgroundColor
-  BoxLayout:
-    size: root.width, root.height
-    orientation: 'vertical'
-    Image:
-      source: 'logo.png'
-      size: self.texture_size
-      size_hint_y: 1.5
+  BaseLayout:
     Label:
       text: "Voltooi betaling\nop PIN terminal"
       font_size: heading_font_size
@@ -311,14 +206,7 @@
         root.cancel()
 
 <UpgradeWashcardPaymentFailed>:
-  canvas.before:
-    Rectangle:
-      pos: self.pos
-      size: self.size
-    Color:
-      rgba: app.backgroundColor
-  BoxLayout:
-    orientation: 'vertical'
+  BaseLayout:
     Image:
       source: 'error.png'
       size: self.texture_size
@@ -328,14 +216,7 @@
       color: error_color
       
 <UpgradeWashcardPaymentSuccess>:
-  canvas.before:
-    Rectangle:
-      pos: self.pos
-      size: self.size
-    Color:
-      rgba: app.backgroundColor
-  BoxLayout:
-    orientation: 'vertical'
+  BaseLayout:
     Image:
       source: 'success.png'
       size: self.texture_size
@@ -349,14 +230,7 @@
       color: app.textColor
       
 <PaymentWashcardCardNotValid>:
-  canvas.before:
-    Rectangle:
-      pos: self.pos
-      size: self.size
-    Color:
-      rgba: app.backgroundColor
-  BoxLayout:
-    orientation: 'vertical'
+  BaseLayout:
     Image:
       source: 'error.png'
       size: self.texture_size
@@ -366,14 +240,7 @@
       color: error_color
 
 <UpgradeWashcardCredit>:
-  canvas.before:
-    Rectangle:
-      pos: self.pos
-      size: self.size
-    Color:
-      rgba: app.backgroundColor
-  BoxLayout:
-    orientation: 'vertical'
+  BaseLayout:
     Image:
       source: 'error.png'
       size: self.texture_size
@@ -383,14 +250,7 @@
       color: error_color
       
 <PaymentWashcardWrongCarwash>:
-  canvas.before:
-    Rectangle:
-      pos: self.pos
-      size: self.size
-    Color:
-      rgba: app.backgroundColor
-  BoxLayout:
-    orientation: 'vertical'
+  BaseLayout:
     Image:
       source: 'error.png'
       size: self.texture_size
@@ -405,14 +265,7 @@
       color: app.textColor
 
 <PaymentWashcardCardNotFound>:
-  canvas.before:
-    Rectangle:
-      pos: self.pos
-      size: self.size
-    Color:
-      rgba: app.backgroundColor
-  BoxLayout:
-    orientation: 'vertical'
+  BaseLayout:
     Image:
       source: 'error.png'
       size: self.texture_size
@@ -422,14 +275,7 @@
       color: error_color
 
 <PaymentWashcardInsufficientBalance>:
-  canvas.before:
-    Rectangle:
-      pos: self.pos
-      size: self.size
-    Color:
-      rgba: app.backgroundColor
-  BoxLayout:
-    orientation: 'vertical'
+  BaseLayout:
     Image:
       source: 'error.png'
       size: self.texture_size
@@ -444,14 +290,7 @@
       color: error_color
 
 <PaymentFailed>:
-  canvas.before:
-    Rectangle:
-      pos: self.pos
-      size: self.size
-    Color:
-      rgba: app.backgroundColor
-  BoxLayout:
-    orientation: 'vertical'
+  BaseLayout:
     Image:
       source: 'error.png'
       size: self.texture_size
@@ -461,14 +300,7 @@
       color: error_color
       
 <PaymentSuccess>:
-  canvas.before:
-    Rectangle:
-      pos: self.pos
-      size: self.size
-    Color:
-      rgba: app.backgroundColor
-  BoxLayout:
-    orientation: 'vertical'
+  BaseLayout:
     Image:
       source: 'success.png'
       size: self.texture_size
@@ -496,70 +328,39 @@
       color: app.textColor
 
 <InProgress>:
-  canvas.before:
-    Rectangle:
-      pos: self.pos
-      size: self.size
-    Color:
-      rgba: app.backgroundColor
-  BoxLayout:
-    size: root.width, root.height
-    orientation: 'vertical'
-    Image:
-      source: 'logo.png'
-      size: self.texture_size
-      size_hint_y: 1.5
-    Image:
-      source: 'progress.zip'
-      size: self.texture_size
-      size_hint_y: 1.5
-      anim_delay: 0.05
+  BaseLayout:
     Label:
       text: "Bezig met wassen"
       font_size: heading_font_size
       color: app.textColor
+    FullWidthImage:
+      source: 'progress.zip'
+      anim_delay: 0.05
 
 <MoveVehicle>:
-  canvas.before:
-    Rectangle:
-      pos: self.pos
-      size: self.size
-    Color:
-      rgba: app.backgroundColor
-  BoxLayout:
-    size: root.width, root.height
-    orientation: 'vertical'
-    Image:
-      source: 'logo.png'
-      size: self.texture_size
-      size_hint_y: 1.5
+  BaseLayout:
+    Label:
+      width: self.parent.width
+      text: ""
+      font_size: default_font_size
+      color: app.textColor
+
     Image:
       source: 'arrow_up.png'
-      size: self.texture_size
-      size_hint_y: 1.5
+
     Label:
-      text: "Plaats uw auto"
+      width: self.parent.width
+      text: "Plaats auto in machine"
       font_size: heading_font_size
       color: app.textColor
-    Button:
+
+    BorderedButton:
       text: "Waspas opwaarderen"
-      background_color : app.buttonBackgroundColor
-      background_normal: ''  # Disable the default background image
-      font_size: default_font_size
-      color: app.buttonTextColor
       on_release:
         root.upgrade_washcard()
 
 <Error>:
-  canvas.before:
-    Rectangle:
-      pos: self.pos
-      size: self.size
-    Color:
-      rgba: (1,0,0,1)
-  BoxLayout:
-    size: root.width, root.height
-    orientation: 'vertical'
+  BaseLayout:
     Image:
       source: 'error.png'
       size: self.texture_size

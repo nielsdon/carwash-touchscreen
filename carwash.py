@@ -8,6 +8,7 @@ import time
 import netifaces
 import pigpio
 import requests
+import json
 
 from kivy.app import App
 from kivy.clock import mainthread
@@ -17,6 +18,7 @@ from kivy.uix.screenmanager import NoTransition, ScreenManager, ScreenManagerExc
 from washingOrder import Order
 from googleAnalytics import GoogleAnalytics
 from statusLight import Status_light
+from kivy.core.window import Window
 
 sys.path.append(os.path.join(os.path.dirname(__file__), 'screens'))
 from paymentFailed import PaymentFailed
@@ -168,19 +170,19 @@ class Carwash(App):
         response = requests.get(url, headers=headers, timeout=10)
         if response.status_code != 200:
             response.raise_for_status()
-        #print(response.json())
-        self.SETTINGS = response.json()
+        self.SETTINGS = json.loads(response.text)
         if "general" in self.SETTINGS:
             self.SETTINGS["general"]["jwtToken"] = self.jwt_token
             self.SETTINGS["general"]["carwashId"] = self.carwash_id
             self.buttonBackgroundColor = self.SETTINGS["general"]["buttonBackgroundColor"]
             self.buttonTextColor = self.SETTINGS["general"]["buttonTextColor"]
             self.backgroundColor = self.SETTINGS["general"]["backgroundColor"]
+            Window.clearcolor = self.SETTINGS["general"]["backgroundColor"]  # Force window background to white
             self.textColor = self.SETTINGS["general"]["textColor"]
             self.supportPhone = self.SETTINGS["general"]["supportPhone"]
-        Logger.setLevel(int(self.SETTINGS["general"]["logLevel"]))
-        logging.basicConfig(encoding='utf-8', level=int(self.SETTINGS["general"]["logLevel"]))
-        logging.debug(self.SETTINGS)
+            Logger.setLevel(int(self.SETTINGS["general"]["logLevel"]))
+            logging.basicConfig(encoding='utf-8', level=int(self.SETTINGS["general"]["logLevel"]))
+        #logging.debug(self.SETTINGS)
 
     def selectProgram(self, program):
         logging.debug("Program selected: %s", str(program))

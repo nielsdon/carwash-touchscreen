@@ -3,7 +3,7 @@
 
 # Get the CPU temperature and convert to Celsius
 cpu_temp=$(cat /sys/class/thermal/thermal_zone0/temp)
-cpu_temp=$(echo "$cpu_temp / 1000" | awk '{print $1}') # Convert to Celsius using awk
+cpu_temp=$(echo "scale=1; $cpu_temp / 1000" | bc) # Correct division using bc
 
 # Output in line protocol format
 echo "cpu_temp,sensor=cpu value=${cpu_temp}"

@@ -47,7 +47,7 @@
       pos_hint: {'x': 0, 'top': 1.0}  # Position top-left corner
       opacity: 1 if app.TEST_MODE else 0  # Conditional visibility
     Label:
-      text: "Spiegels ingeklapt?\nAntenne verwijderd?\nMaak dan uw keuze"
+      text: "Spiegels ingeklapt?\nAntenne verwijderd?"
       font_size: heading_font_size
       color: app.textColor
 
@@ -64,8 +64,8 @@
       pos_hint: {'x': 0, 'top': 1.0}  # Position top-left corner
       opacity: 1 if app.TEST_MODE else 0  # Conditional visibility
     Label:
-      text: "Maak uw keuze"
-      font_size: heading_font_size
+      text: "Spiegels ingeklapt?\nAntenne verwijderd?"
+      font_size: default_font_size
       color: app.textColor
 
 <PaymentMethod>:
@@ -175,20 +175,10 @@
         on_release:
           root.chooseAmount(200)
 
-    Button:
+    BorderedButton:
       text: "Annuleren"
-      background_color : app.buttonBackgroundColor
-      background_normal: ''  # Disable the default background image
-      font_size: default_font_size
-      color: app.buttonTextColor
       on_release:
         root.cancel()
-      canvas.before:
-        Color:
-          rgba: 1, 1, 1, 1
-        Line:
-          width: 3  # Border thickness
-          rectangle: self.x, self.y, self.width, self.height
 
 <UpgradeWashcardPayment>:
   BaseLayout:
@@ -196,12 +186,8 @@
       text: "Voltooi betaling\nop PIN terminal"
       font_size: heading_font_size
       color: app.textColor
-    Button:
+    BorderedButton:
       text: "Annuleren"
-      background_color : app.buttonBackgroundColor
-      background_normal: ''  # Disable the default background image
-      font_size: default_font_size
-      color: app.buttonTextColor
       on_release:
         root.cancel()
 

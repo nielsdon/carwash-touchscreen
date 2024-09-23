@@ -1,3 +1,14 @@
+#!/bin/bash
+
+# Wait until eth0 or wlan0 is up
+while ! ip link show eth0 | grep "state UP" && ! ip link show wlan0 | grep "state UP"; do
+  echo "Waiting for network interface to be up..."
+  sleep 5
+done
+
+# Network is up, proceed with the rest of the script
+echo "Network is up, continuing with updates..."
+
 # Set the project and branch variables
 project='carwash-touchscreen'
 branch=$1

@@ -40,7 +40,7 @@ chmod a+x *.sh
 
 # update and start influxDB reporting
 sudo cp ./get_cpu_temp.sh /usr/local/bin/.
-sudp cp ./asplashscreen.sh /etc/init.d/asplashscreen
+sudo cp ./asplashscreen.sh /etc/init.d/asplashscreen
 sudo chmod a+x /etc/init.d/asplashscreen
 sudo cp ./asplashscreen.service /etc/systemd/system/.
 sudo chmod a+x /usr/local/bin/get_cpu_temp.sh

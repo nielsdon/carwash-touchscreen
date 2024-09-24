@@ -2,3 +2,4 @@ config.ini
 env
 logo.png
 pyarmor.error.log
+__pycache__

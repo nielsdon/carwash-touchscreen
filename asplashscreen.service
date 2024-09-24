@@ -1,0 +1,12 @@
+[Unit]
+Description=ASplashScreen Service
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/etc/init.d/asplashscreen start
+ExecStop=/etc/init.d/asplashscreen stop
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

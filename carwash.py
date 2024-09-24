@@ -8,6 +8,7 @@ import time
 import netifaces
 import pigpio
 import requests
+import json
 
 from kivy.app import App
 from kivy.clock import mainthread
@@ -17,6 +18,7 @@ from kivy.uix.screenmanager import NoTransition, ScreenManager, ScreenManagerExc
 from washingOrder import Order
 from googleAnalytics import GoogleAnalytics
 from statusLight import Status_light
+from kivy.core.window import Window
 
 sys.path.append(os.path.join(os.path.dirname(__file__), 'screens'))
 from paymentFailed import PaymentFailed
@@ -53,8 +55,12 @@ if not pi.connected:
     exit()
 if TEST_MODE:
     API_PATH = 'dev'
+    os.environ['KIVY_NO_CONSOLELOG'] = '0'  # Enable console logging
+    os.environ['KIVY_LOG_LEVEL'] = 'debug'  # Set log level to debug
 else:
     API_PATH = 'v1'
+    os.environ['KIVY_NO_CONSOLELOG'] = '0'  # Enable console logging
+    os.environ['KIVY_LOG_LEVEL'] = 'debug'  # Set log level to debug
 
 locale.setlocale(locale.LC_ALL, 'nl_NL.UTF-8')
 
@@ -158,25 +164,25 @@ class Carwash(App):
 
     def load_settings(self):
         """loads settings from DB"""
-        url = f'https://api.washterminalpro.nl/{API_PATH}/carwash/{self.carwash_id}/settings'
+        url = f'https://api.washterminalpro.nl/{API_PATH}/carwash'
         headers = {"Authorization": f'Bearer {self.jwt_token}'}
         
         response = requests.get(url, headers=headers, timeout=10)
         if response.status_code != 200:
             response.raise_for_status()
-        #print(response.json())
-        self.SETTINGS = response.json()
+        self.SETTINGS = json.loads(response.text)
         if "general" in self.SETTINGS:
             self.SETTINGS["general"]["jwtToken"] = self.jwt_token
             self.SETTINGS["general"]["carwashId"] = self.carwash_id
             self.buttonBackgroundColor = self.SETTINGS["general"]["buttonBackgroundColor"]
             self.buttonTextColor = self.SETTINGS["general"]["buttonTextColor"]
             self.backgroundColor = self.SETTINGS["general"]["backgroundColor"]
+            Window.clearcolor = self.SETTINGS["general"]["backgroundColor"]  # Force window background to white
             self.textColor = self.SETTINGS["general"]["textColor"]
             self.supportPhone = self.SETTINGS["general"]["supportPhone"]
-        Logger.setLevel(int(self.SETTINGS["general"]["logLevel"]))
-        logging.basicConfig(encoding='utf-8', level=int(self.SETTINGS["general"]["logLevel"]))
-        logging.debug(self.SETTINGS)
+            Logger.setLevel(int(self.SETTINGS["general"]["logLevel"]))
+            logging.basicConfig(encoding='utf-8', level=int(self.SETTINGS["general"]["logLevel"]))
+        #logging.debug(self.SETTINGS)
 
     def selectProgram(self, program):
         logging.debug("Program selected: %s", str(program))
@@ -230,7 +236,7 @@ class Carwash(App):
                 exit()
             
             #status led setup
-            if(self.SETTINGS["gpio"]["statusLED_red"] and self.SETTINGS["gpio"]["statusLED_green"] and self.SETTINGS["gpio"]["statusLED_blue"]):
+            if("statusLED_red" in self.SETTINGS["gpio"] and "statusLED_green" in self.SETTINGS["gpio"] and "statusLED_blue" in self.SETTINGS["gpio"]):
                 rgb = [int(self.SETTINGS["gpio"]["statusLED_red"]), int(self.SETTINGS["gpio"]["statusLED_green"]), int(self.SETTINGS["gpio"]["statusLED_blue"])]
                 self.status_light = Status_light(rgb)
             

@@ -54,8 +54,6 @@ class UpgradeWashcardReadCard(Screen):
             screen = app.sm.get_screen('upgrade_washcard_choose_amount')
             screen.ids.lbl_balance.text = locale.currency(
                 float(self.washcard.balance))
-            screen.ids.lbl_carwash.text = self.washcard.carwash.name + ' - ' + self.washcard.carwash.city
-            screen.ids.lbl_company.text = self.washcard.company.name + ' - ' + self.washcard.carwash.city
             app.activeWashcard = self.washcard
             app.changeScreen('upgrade_washcard_choose_amount')
 

@@ -3,6 +3,7 @@ import locale
 import threading
 from kivy.uix.screenmanager import Screen
 from kivy.app import App
+from kivy.clock import Clock
 from washcard import Washcard
 
 class UpgradeWashcardReadCard(Screen):
@@ -16,9 +17,15 @@ class UpgradeWashcardReadCard(Screen):
         self.SETTINGS = kwargs.pop('settings', None)
         super(UpgradeWashcardReadCard, self).__init__(**kwargs)
         self.washcard = Washcard(self.SETTINGS)
+        self.timeout_event = None  # Will store the timeout event
 
     def on_enter(self, *args, **kwargs):
         logging.debug("=== Upgrade washcard - read card ===")
+        app = App.get_running_app()
+        
+        #if no card is read within 10 seconds, go back to start screen
+        self.timeout_event = Clock.schedule_once(self.cancel, 10)
+
         if self.thread_running:
             logging.debug("Reading thread is already running")
             return
@@ -37,6 +44,9 @@ class UpgradeWashcardReadCard(Screen):
 
     def processReadResults(self):
         self.thread_running = False  # Reset the flag when done
+        #remove the read timeout
+        Clock.unschedule(self.timeout_event)  # Cancel the timeout if card is read
+
         app = App.get_running_app()
         if self.washcard.uid == '':
             app.changeScreen('payment_washcard_card_not_found')
@@ -57,8 +67,10 @@ class UpgradeWashcardReadCard(Screen):
             app.activeWashcard = self.washcard
             app.changeScreen('upgrade_washcard_choose_amount')
 
-    def cancel(self):
+    def cancel(self, dt=None):
         logging.debug("Cancelling upgrading washcard...")
+        #remove the read timeout
+        Clock.unschedule(self.timeout_event)  # Cancel the timeout if card is read
         self.washcard.stopReading()
         if self.reading_thread and self.reading_thread.is_alive():
             self.reading_thread.join(timeout=1)  # Wait for the thread to finish with a timeout

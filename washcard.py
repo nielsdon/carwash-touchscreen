@@ -141,6 +141,8 @@ class Washcard():
 
     def readCard(self, callback):            
         logging.debug("Waiting for NFC UID...")
+        if self.device is None:
+            raise ValueError("Device path is not set. Please provide a valid device path.")
         
         # Create an instance of the InputDevice class
         print(f"Using device: {self.device}")

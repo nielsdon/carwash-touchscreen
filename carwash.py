@@ -5,10 +5,10 @@ import configparser
 import locale
 import logging
 import time
+import json
 import netifaces
 import pigpio
 import requests
-import json
 
 from kivy.app import App
 from kivy.clock import mainthread
@@ -18,7 +18,6 @@ from kivy.uix.screenmanager import NoTransition, ScreenManager, ScreenManagerExc
 from washingOrder import Order
 from googleAnalytics import GoogleAnalytics
 from statusLight import Status_light
-from kivy.core.window import Window
 
 sys.path.append(os.path.join(os.path.dirname(__file__), 'screens'))
 from paymentFailed import PaymentFailed
@@ -116,6 +115,7 @@ class Carwash(App):
         self.sm = None
 
     def get_ip_address(self):
+        """retrieve the IP address; will be shown on screen in test mode"""
         interfaces = netifaces.interfaces()
         for interface in interfaces:
             addresses = netifaces.ifaddresses(interface)
@@ -124,8 +124,9 @@ class Carwash(App):
                 ipv4 = addresses[netifaces.AF_INET][0]['addr']
                 if ipv4 != '127.0.0.1':  # Ignore localhost
                     return ipv4
+
     def build(self):
-        # Create and return the root widget (ScreenManager)
+        """ Create and return the root widget (ScreenManager)"""
         self.sm = ScreenManager(transition=NoTransition())
         self.load_screens()
         # show the test label with IP address in test mode
@@ -202,7 +203,7 @@ class Carwash(App):
 
     def startMachine(self):
         # switch on status light
-        if(self.status_light):
+        if self.status_light:
             self.status_light.starting()
         # log with google analytics
         items = [{ "item_id": self.activeOrder.program, "item_name": self.activeOrder.description, "item_brand": self.carwash_name, "item_category": self.activeOrder.transaction_type, "quantity": 1, "price": self.activeOrder.amount }]
@@ -298,7 +299,7 @@ class Carwash(App):
         pi.stop()
 
     @mainthread
-    def changeScreen(self, screenName, *args):
+    def changeScreen(self, screenName):
         logging.debug("Showing screen %s", screenName)
         self.ga.send_event("page_view", { "page_title": screenName, "location": "Netherlands", "firebase_screen": screenName, "firebase_screen_class": "python", "firebase_screen_id": screenName })
         logging.debug("Current screen:%s", str(self.sm.current))
@@ -309,7 +310,7 @@ class Carwash(App):
             logging.error(e)
 
     @mainthread
-    def busy_input_changed(self, *args):
+    def busy_input_changed(self):
         # only do something when value changes
         if self.busy != pi.read(int(self.SETTINGS["gpio"]["busyInput"])):
             logging.debug("Input changed: BUSY | value = %s", str(pi.read(int(self.SETTINGS["gpio"]["busyInput"]))))
@@ -317,14 +318,14 @@ class Carwash(App):
             self.show_start_screen()
 
     @mainthread
-    def error_input_changed(self, *args):
+    def error_input_changed(self):
         if self.error != pi.read(int(self.SETTINGS["gpio"]["errorInput"])):
             logging.debug("Input changed: ERROR | value = %s", str(pi.read(int(self.SETTINGS["gpio"]["errorInput"]))))
             self.error = pi.read(int(self.SETTINGS["gpio"]["errorInput"]))
             self.show_start_screen()
 
     @mainthread
-    def high_input_changed(self, *args):
+    def high_input_changed(self):
         if self.high != pi.read(int(self.SETTINGS["gpio"]["highVehicle"])):
             logging.debug("Input changed: HIGH | value = %s", str(pi.read(int(self.SETTINGS["gpio"]["highVehicle"]))))
             self.high = pi.read(int(self.SETTINGS["gpio"]["highVehicle"]))
@@ -333,14 +334,14 @@ class Carwash(App):
                 self.show_start_screen()
 
     @mainthread
-    def stop_input_changed(self, *args):
+    def stop_input_changed(self):
         if self.in_position != pi.read(int(self.SETTINGS["gpio"]["stopVehicle"])):
             logging.debug("Input changed: STOP | value = %s", str(pi.read(int(self.SETTINGS["gpio"]["stopVehicle"]))))
             self.in_position = pi.read(int(self.SETTINGS["gpio"]["stopVehicle"]))
             self.show_start_screen()
 
     @mainthread
-    def show_start_screen(self, *args):
+    def show_start_screen(self):
         logging.debug("Determining start screen...")
         # ERROR
         if self.error != 1:

@@ -8,12 +8,6 @@
   height: 200
   font_size: default_font_size
   color: app.buttonTextColor
-  canvas.before:
-    Color:
-      rgba: 1, 1, 1, 1  # Border color
-    Line:
-      width: 3  # Border thickness
-      rectangle: self.x, self.y, self.width, self.height
 
 <FullWidthImage@Image>:
   size_hint_y: None
@@ -31,6 +25,7 @@
       pos: self.pos
       size: self.size
   orientation: 'vertical'
+  spacing: 5
   FullWidthImage:
     source: 'logo.png'
 

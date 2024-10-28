@@ -1,8 +1,8 @@
+import logging
 from kivy.uix.screenmanager import Screen
 from kivy.uix.button import Button
 from kivy.factory import Factory
 from kivy.app import App
-import logging
 
 class ProgramSelection(Screen):
     def __init__(self, **kwargs):

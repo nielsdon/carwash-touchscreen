@@ -1,5 +1,5 @@
 # .flake8
 [flake8]
-max-line-length = 100  # Adjust line length if desired
-ignore = E203, E266, E501, W503  # Example of ignoring specific errors
-exclude = .git, __pycache__, old, build, dist  # Exclude certain folders
+max-line-length = 100
+ignore = E203, E266, E501, W503
+exclude = .git, __pycache__, old, build, dist

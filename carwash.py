@@ -310,7 +310,7 @@ class Carwash(App):
             logging.error(e)
 
     @mainthread
-    def busy_input_changed(self):
+    def busy_input_changed(self, *args):
         # only do something when value changes
         if self.busy != pi.read(int(self.SETTINGS["gpio"]["busyInput"])):
             logging.debug("Input changed: BUSY | value = %s", str(pi.read(int(self.SETTINGS["gpio"]["busyInput"]))))
@@ -318,14 +318,14 @@ class Carwash(App):
             self.show_start_screen()
 
     @mainthread
-    def error_input_changed(self):
+    def error_input_changed(self, *args):
         if self.error != pi.read(int(self.SETTINGS["gpio"]["errorInput"])):
             logging.debug("Input changed: ERROR | value = %s", str(pi.read(int(self.SETTINGS["gpio"]["errorInput"]))))
             self.error = pi.read(int(self.SETTINGS["gpio"]["errorInput"]))
             self.show_start_screen()
 
     @mainthread
-    def high_input_changed(self):
+    def high_input_changed(self, *args):
         if self.high != pi.read(int(self.SETTINGS["gpio"]["highVehicle"])):
             logging.debug("Input changed: HIGH | value = %s", str(pi.read(int(self.SETTINGS["gpio"]["highVehicle"]))))
             self.high = pi.read(int(self.SETTINGS["gpio"]["highVehicle"]))
@@ -334,14 +334,14 @@ class Carwash(App):
                 self.show_start_screen()
 
     @mainthread
-    def stop_input_changed(self):
+    def stop_input_changed(self, *args):
         if self.in_position != pi.read(int(self.SETTINGS["gpio"]["stopVehicle"])):
             logging.debug("Input changed: STOP | value = %s", str(pi.read(int(self.SETTINGS["gpio"]["stopVehicle"]))))
             self.in_position = pi.read(int(self.SETTINGS["gpio"]["stopVehicle"]))
             self.show_start_screen()
 
     @mainthread
-    def show_start_screen(self):
+    def show_start_screen(self, *args):
         logging.debug("Determining start screen...")
         # ERROR
         if self.error != 1:

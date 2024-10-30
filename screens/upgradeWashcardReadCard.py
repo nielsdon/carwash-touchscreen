@@ -6,13 +6,14 @@ from kivy.app import App
 from kivy.clock import Clock
 from washcard import Washcard
 
+
 class UpgradeWashcardReadCard(Screen):
     """ Reading the card and loading the info """
     SETTINGS = {}
     washcard = None
     reading_thread = None
     thread_running = False
-    
+
     def __init__(self, **kwargs):
         self.SETTINGS = kwargs.pop('settings', None)
         super(UpgradeWashcardReadCard, self).__init__(**kwargs)
@@ -21,9 +22,8 @@ class UpgradeWashcardReadCard(Screen):
 
     def on_enter(self, *args, **kwargs):
         logging.debug("=== Upgrade washcard - read card ===")
-        app = App.get_running_app()
-        
-        #if no card is read within 10 seconds, go back to start screen
+
+        # if no card is read within 10 seconds, go back to start screen
         self.timeout_event = Clock.schedule_once(self.cancel, 10)
 
         if self.thread_running:
@@ -44,7 +44,7 @@ class UpgradeWashcardReadCard(Screen):
 
     def processReadResults(self):
         self.thread_running = False  # Reset the flag when done
-        #remove the read timeout
+        # remove the read timeout
         Clock.unschedule(self.timeout_event)  # Cancel the timeout if card is read
 
         app = App.get_running_app()
@@ -69,7 +69,7 @@ class UpgradeWashcardReadCard(Screen):
 
     def cancel(self, dt=None):
         logging.debug("Cancelling upgrading washcard...")
-        #remove the read timeout
+        # remove the read timeout
         Clock.unschedule(self.timeout_event)  # Cancel the timeout if card is read
         self.washcard.stop_reading()
         if self.reading_thread and self.reading_thread.is_alive():

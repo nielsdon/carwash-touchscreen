@@ -3,6 +3,7 @@ from kivy.app import App
 import logging
 import time
 
+
 class PaymentWashcardWrongCarwash(Screen):
     def on_enter(self, *args, **kwargs):
         logging.debug("=== Wrong Carwash ===")

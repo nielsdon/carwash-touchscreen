@@ -4,6 +4,7 @@ from kivy.clock import Clock
 from kivy.app import App
 from functools import partial
 
+
 class PaymentFailed(Screen):
     def on_enter(self, *args, **kwargs):
         logging.debug("=== Payment failed ===")

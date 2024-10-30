@@ -2,8 +2,9 @@ from kivy.uix.screenmanager import Screen
 from kivy.app import App
 import logging
 
+
 class UpgradeWashcardChooseAmount(Screen):
-    def on_enter(self, *args, **kwargs):
+    def on_enter(self, *_, **__):
         logging.debug("=== Upgrade Washcard - Choose Amount ===")
 
     def chooseAmount(self, amount):

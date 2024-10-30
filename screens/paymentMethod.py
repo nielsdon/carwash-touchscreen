@@ -1,6 +1,7 @@
 from kivy.uix.screenmanager import Screen
 from kivy.app import App
 
+
 class PaymentMethod(Screen):
     def selectPin(self):
         print("PIN clicked")

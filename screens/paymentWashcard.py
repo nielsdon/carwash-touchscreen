@@ -5,10 +5,11 @@ from kivy.uix.screenmanager import Screen
 from kivy.app import App
 from washcard import Washcard
 
+
 class PaymentWashcard(Screen):
     reading_thread = None
     thread_running = False
-    
+
     def __init__(self, **kwargs):
         super(PaymentWashcard, self).__init__(**kwargs)
         self.washcard = None
@@ -27,7 +28,7 @@ class PaymentWashcard(Screen):
         # Run the reader in a separate thread
         self.reading_thread = threading.Thread(target=self.washcard.read_card, args=(self.processReadResults,), name="read_card")
         self.reading_thread.start()
-        
+
     def processReadResults(self):
         self.thread_running = False  # Reset the flag when done
         app = App.get_running_app()
@@ -35,7 +36,7 @@ class PaymentWashcard(Screen):
         logging.debug("Processing card read results....")
         logging.debug("Card UID: %s", self.washcard.uid)
         if self.washcard.credit and "creditcardDiscountPercentage" in app.SETTINGS["general"]:
-            logging.debug("Discount:%s",str(app.SETTINGS["general"]["creditcardDiscountPercentage"]))
+            logging.debug("Discount:%s", str(app.SETTINGS["general"]["creditcardDiscountPercentage"]))
             multiplier = (100 - app.SETTINGS["general"]["creditcardDiscountPercentage"]) / 100
             logging.debug("Old price:%s", str(app.activeOrder.amount))
             app.activeOrder.amount = app.activeOrder.amount * multiplier
@@ -51,15 +52,15 @@ class PaymentWashcard(Screen):
             screen.ids.lbl_carwash.text = self.washcard.carwash.name + '\n' + self.washcard.carwash.city
             app.change_screen('payment_washcard_wrong_carwash')
         else:
-            #checks done: create transaction
+            # checks done: create transaction
             response = self.washcard.pay(app.activeOrder)
-            #logging.debug('Response status code: %s', str(response["statusCode"]))
+            # logging.debug('Response status code: %s', str(response["statusCode"]))
             logging.debug('Response:')
             logging.debug(response)
             if response["statusCode"] == 200:
                 screen = app.sm.get_screen('payment_success')
                 if 'balance' in response:
-                    logging.debug('New balance: %s %s',  locale.LC_MONETARY, locale.currency(float(response["balance"])))
+                    logging.debug('New balance: %s %s', locale.LC_MONETARY, locale.currency(float(response["balance"])))
                     screen.ids.lbl_balance_text.text = "Nieuw saldo:"
                     screen.ids.lbl_balance.text = locale.currency(float(response["balance"]))
                 app.change_screen('payment_success')

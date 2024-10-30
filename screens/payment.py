@@ -7,13 +7,14 @@ from kivy.app import App
 from payNL import PayNL
 from washcard import Washcard
 
+
 class Payment(Screen):
     transaction_status = ''
     pay = False
     transaction_id = 0
     cancel_transaction = threading.Event()
     settings = {}
-    
+
     def on_enter(self, *args, **kwargs):
         logging.debug("=== Payment ===")
         app = App.get_running_app()
@@ -54,7 +55,7 @@ class Payment(Screen):
             app.show_start_screen()
         else:
             logging.debug('some payment error')
-            #self.pay.cancelTransaction(self.transaction_id)
+            # self.pay.cancelTransaction(self.transaction_id)
             Clock.schedule_once(lambda dt: app.change_screen('payment_failed'))
 
     def cancel(self, *args, **kwargs):

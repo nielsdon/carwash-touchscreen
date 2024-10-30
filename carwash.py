@@ -61,6 +61,7 @@ else:
 
 locale.setlocale(locale.LC_ALL, 'nl_NL.UTF-8')
 
+
 class Carwash(App):
     """ class definition """
     activeOrder = ''
@@ -70,10 +71,10 @@ class Carwash(App):
     jwt_token = ''
     TEST_MODE = True
     SETTINGS = {}
-    buttonBackgroundColor = [1,1,1,1]
-    buttonTextColor = [0,0,0,1]
-    textColor = [0,0,0,1]
-    backgroundColor = [1,1,1,1]
+    buttonBackgroundColor = [1, 1, 1, 1]
+    buttonTextColor = [0, 0, 0, 1]
+    textColor = [0, 0, 0, 1]
+    backgroundColor = [1, 1, 1, 1]
     supportPhone = ''
     in_position = 0
     error = 1
@@ -93,8 +94,8 @@ class Carwash(App):
         # Initialize API connection and settings
         url = f'https://api.washterminalpro.nl/{API_PATH}/login/'
         response = requests.post(url, json={
-          "username": API_TOKEN, 
-          "password": API_SECRET
+            "username": API_TOKEN,
+            "password": API_SECRET
         }, timeout=10)
         if response.status_code != 200:
             response.raise_for_status()
@@ -133,9 +134,9 @@ class Carwash(App):
         # show the test label with IP address in test mode
         if TEST_MODE:
             screen = self.sm.get_screen("program_selection")
-            screen.ids.test_label.text = "TEST - " +self.ip_address
+            screen.ids.test_label.text = "TEST - " + self.ip_address
             screen = self.sm.get_screen("program_selection_high")
-            screen.ids.test_label.text = "TEST - " +self.ip_address
+            screen.ids.test_label.text = "TEST - " + self.ip_address
         # start operation
         self.show_start_screen()
         return self.sm
@@ -143,9 +144,9 @@ class Carwash(App):
     def load_screens(self):
         """ setup screens"""
         self.sm.add_widget(MoveVehicle(name="move_vehicle"))
-        self.sm.add_widget(ProgramSelection(name="program_selection", 
+        self.sm.add_widget(ProgramSelection(name="program_selection",
                                             settings=self.SETTINGS))
-        self.sm.add_widget(ProgramSelectionHigh(name="program_selection_high", 
+        self.sm.add_widget(ProgramSelectionHigh(name="program_selection_high",
                                                 settings=self.SETTINGS))
         self.sm.add_widget(PaymentMethod(name="payment_method"))
         self.sm.add_widget(Payment(name="payment"))
@@ -154,10 +155,10 @@ class Carwash(App):
         self.sm.add_widget(PaymentWashcardWrongCarwash(name="payment_washcard_wrong_carwash"))
         self.sm.add_widget(PaymentWashcardCardNotFound(name="payment_washcard_card_not_found"))
         self.sm.add_widget(PaymentWashcardInsufficientBalance(
-          name="payment_washcard_insufficient_balance"))
+            name="payment_washcard_insufficient_balance"))
         self.sm.add_widget(PaymentFailed(name="payment_failed"))
         self.sm.add_widget(PaymentSuccess(name="payment_success"))
-        self.sm.add_widget(UpgradeWashcardReadCard(name="upgrade_washcard_read_card", 
+        self.sm.add_widget(UpgradeWashcardReadCard(name="upgrade_washcard_read_card",
                                                    settings=self.SETTINGS))
         self.sm.add_widget(UpgradeWashcardCredit(name="upgrade_washcard_credit"))
         self.sm.add_widget(UpgradeWashcardChooseAmount(name="upgrade_washcard_choose_amount"))
@@ -186,7 +187,6 @@ class Carwash(App):
             self.supportPhone = self.SETTINGS["general"]["supportPhone"]
             Logger.setLevel(int(self.SETTINGS["general"]["logLevel"]))
             logging.basicConfig(encoding='utf-8', level=int(self.SETTINGS["general"]["logLevel"]))
-        #logging.debug(self.SETTINGS)
 
     def select_program(self, program):
         """" function that is called from the program-selection screens """
@@ -194,19 +194,19 @@ class Carwash(App):
         order = Order(program, self.SETTINGS)
         self.activeOrder = order
         self.ga.start_new_session()
-        items = [{ 
-                  "item_id": str(program), 
-                  "item_name": order.description, 
-                  "item_brand": self.carwash_name, 
-                  "item_category": order.transaction_type, 
-                  "quantity": 1, 
-                  "price": order.amount 
+        items = [{
+            "item_id": str(program),
+            "item_name": order.description,
+            "item_brand": self.carwash_name,
+            "item_category": order.transaction_type,
+            "quantity": 1,
+            "price": order.amount
         }]
-        self.ga.send_event("add_to_cart", { 
-            "currency": "EUR", 
-            "value": order.margin, 
-            "items": items, 
-            "location": "Netherlands" 
+        self.ga.send_event("add_to_cart", {
+            "currency": "EUR",
+            "value": order.margin,
+            "items": items,
+            "location": "Netherlands"
         })
         self.change_screen("payment_method")
 
@@ -214,62 +214,62 @@ class Carwash(App):
         """" function to handle the card topups """
         self.washcardTopup = amount
         self.ga.start_new_session()
-        productName = "TOPUP_" +str(amount)
+        productName = "TOPUP_" + str(amount)
         items = [{
-            "item_id": productName, 
-            "item_name": productName, 
-            "item_brand": self.carwash_name, 
-            "item_category": "TOPUP", 
-            "quantity": 1, 
-            "price": self.SETTINGS["prices"][productName] 
+            "item_id": productName,
+            "item_name": productName,
+            "item_brand": self.carwash_name,
+            "item_category": "TOPUP",
+            "quantity": 1,
+            "price": self.SETTINGS["prices"][productName]
         }]
         self.ga.send_event("add_to_cart", {
-            "currency": "EUR", 
-            "value": self.SETTINGS["margins"][productName], 
-            "items": items, 
-            "location": "Netherlands" 
+            "currency": "EUR",
+            "value": self.SETTINGS["margins"][productName],
+            "items": items,
+            "location": "Netherlands"
         })
 
     def startMachine(self):
         """ method to physically switch on the machine with the selected program """
         # log with google analytics
-        items = [{ 
-            "item_id": self.activeOrder.program, 
-            "item_name": self.activeOrder.description, 
-            "item_brand": self.carwash_name, 
-            "item_category": self.activeOrder.transaction_type, 
-            "quantity": 1, 
-            "price": self.activeOrder.amount 
+        items = [{
+            "item_id": self.activeOrder.program,
+            "item_name": self.activeOrder.description,
+            "item_brand": self.carwash_name,
+            "item_category": self.activeOrder.transaction_type,
+            "quantity": 1,
+            "price": self.activeOrder.amount
         }]
-        self.ga.send_event("purchase", { 
-            "transaction_id": self.activeOrder.id, 
-            "currency": "EUR", 
-            "value": self.activeOrder.margin, 
-            "items": items, 
-            "location": "Netherlands" 
+        self.ga.send_event("purchase", {
+            "transaction_id": self.activeOrder.id,
+            "currency": "EUR",
+            "value": self.activeOrder.margin,
+            "items": items,
+            "location": "Netherlands"
         })
-        #transform WASH_1 to 1
+        # transform WASH_1 to 1
         programNumber = int(self.activeOrder.program[5:])
         binProgramNumber = '{0:04b}'.format(programNumber)
         logging.debug("Starting machine. Binary: %s", str(binProgramNumber))
         arr = list(binProgramNumber)
         print(arr)
         if int(arr[3]) == 1:
-            pi.write(int(self.SETTINGS["gpio"]["BIT1LED"]),0)
+            pi.write(int(self.SETTINGS["gpio"]["BIT1LED"]), 0)
         if int(arr[2]) == 1:
-            pi.write(int(self.SETTINGS["gpio"]["BIT2LED"]),0)
+            pi.write(int(self.SETTINGS["gpio"]["BIT2LED"]), 0)
         if int(arr[1]) == 1:
-            pi.write(int(self.SETTINGS["gpio"]["BIT4LED"]),0)
+            pi.write(int(self.SETTINGS["gpio"]["BIT4LED"]), 0)
         if int(arr[0]) == 1:
-            pi.write(int(self.SETTINGS["gpio"]["BIT8LED"]),0)
+            pi.write(int(self.SETTINGS["gpio"]["BIT8LED"]), 0)
         time.sleep(2)
-        pi.write(int(self.SETTINGS["gpio"]["BIT1LED"]),1)
-        pi.write(int(self.SETTINGS["gpio"]["BIT2LED"]),1)
-        pi.write(int(self.SETTINGS["gpio"]["BIT4LED"]),1)
-        pi.write(int(self.SETTINGS["gpio"]["BIT8LED"]),1)
+        pi.write(int(self.SETTINGS["gpio"]["BIT1LED"]), 1)
+        pi.write(int(self.SETTINGS["gpio"]["BIT2LED"]), 1)
+        pi.write(int(self.SETTINGS["gpio"]["BIT4LED"]), 1)
+        pi.write(int(self.SETTINGS["gpio"]["BIT8LED"]), 1)
 
         # track with google analytics
-        self.ga.send_event("machine_start", { "program": self.activeOrder.program })
+        self.ga.send_event("machine_start", {"program": self.activeOrder.program})
 
     def setupIO(self):
         """ setup GPIO ports based on the carwash settings """
@@ -305,16 +305,16 @@ class Carwash(App):
             pi.set_pull_up_down(int(self.SETTINGS["gpio"]["stopVehicle"]), pigpio.PUD_DOWN)
 
             # Machine in progress/done
-            pi.callback(int(self.SETTINGS["gpio"]["busyInput"]), 
+            pi.callback(int(self.SETTINGS["gpio"]["busyInput"]),
                         pigpio.EITHER_EDGE, self.busy_input_changed)
-            pi.callback(int(self.SETTINGS["gpio"]["errorInput"]), 
+            pi.callback(int(self.SETTINGS["gpio"]["errorInput"]),
                         pigpio.EITHER_EDGE, self.error_input_changed)
-            pi.callback(int(self.SETTINGS["gpio"]["highVehicle"]), 
+            pi.callback(int(self.SETTINGS["gpio"]["highVehicle"]),
                         pigpio.EITHER_EDGE, self.high_input_changed)
-            pi.callback(int(self.SETTINGS["gpio"]["stopVehicle"]), 
+            pi.callback(int(self.SETTINGS["gpio"]["stopVehicle"]),
                         pigpio.EITHER_EDGE, self.stop_input_changed)
 
-            #store statuses based on initial state of sensors
+            # store statuses based on initial state of sensors
             self.busy = pi.read(int(self.SETTINGS["gpio"]["busyInput"]))
             self.high = pi.read(int(self.SETTINGS["gpio"]["highVehicle"]))
             self.error = pi.read(int(self.SETTINGS["gpio"]["errorInput"]))
@@ -342,12 +342,12 @@ class Carwash(App):
     def change_screen(self, screen_name):
         """ main function to switch screens """
         logging.debug("Showing screen %s", screen_name)
-        self.ga.send_event("page_view", { 
-            "page_title": screen_name, 
-            "location": "Netherlands", 
-            "firebase_screen": screen_name, 
-            "firebase_screen_class": "python", 
-            "firebase_screen_id": screen_name 
+        self.ga.send_event("page_view", {
+            "page_title": screen_name,
+            "location": "Netherlands",
+            "firebase_screen": screen_name,
+            "firebase_screen_class": "python",
+            "firebase_screen_id": screen_name
         })
         logging.debug("Current screen:%s", str(self.sm.current))
         try:
@@ -361,7 +361,7 @@ class Carwash(App):
         """" input gpio value changed on busy pin """
         # only do something when value changes
         if self.busy != pi.read(int(self.SETTINGS["gpio"]["busyInput"])):
-            logging.debug("Input changed: BUSY | value = %s", 
+            logging.debug("Input changed: BUSY | value = %s",
                           str(pi.read(int(self.SETTINGS["gpio"]["busyInput"]))))
             self.busy = pi.read(int(self.SETTINGS["gpio"]["busyInput"]))
             self.show_start_screen()
@@ -378,7 +378,7 @@ class Carwash(App):
     def high_input_changed(self, *_):
         """" input gpio value changed on high input pin """
         if self.high != pi.read(int(self.SETTINGS["gpio"]["highVehicle"])):
-            logging.debug("Input changed: HIGH | value = %s", 
+            logging.debug("Input changed: HIGH | value = %s",
                           str(pi.read(int(self.SETTINGS["gpio"]["highVehicle"]))))
             self.high = pi.read(int(self.SETTINGS["gpio"]["highVehicle"]))
             # don't interrupt any other screens
@@ -389,7 +389,7 @@ class Carwash(App):
     def stop_input_changed(self, *_):
         """" input gpio value changed on stop input pin """
         if self.in_position != pi.read(int(self.SETTINGS["gpio"]["stopVehicle"])):
-            logging.debug("Input changed: STOP | value = %s", 
+            logging.debug("Input changed: STOP | value = %s",
                           str(pi.read(int(self.SETTINGS["gpio"]["stopVehicle"]))))
             self.in_position = pi.read(int(self.SETTINGS["gpio"]["stopVehicle"]))
             self.show_start_screen()

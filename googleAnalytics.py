@@ -5,6 +5,7 @@ import hashlib
 import logging
 import requests
 
+
 class GoogleAnalytics:
     """The main Google Analytics class"""
     def __init__(self, config_path='config.ini'):
@@ -92,6 +93,7 @@ class GoogleAnalytics:
     def get_event_hash(self, event_name, event_params):
         event_string = f"{event_name}:{json.dumps(event_params, sort_keys=True)}"
         return hashlib.md5(event_string.encode()).hexdigest()
+
 
 if __name__ == '__main__':
     # Example usage

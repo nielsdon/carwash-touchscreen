@@ -7,6 +7,7 @@ CONFIG = configparser.ConfigParser()
 CONFIG.read('config.ini')
 SETTINGS = {}
 
+
 class Order():
     """The order being processed"""
     program = ''
@@ -25,21 +26,21 @@ class Order():
         if "names" in SETTINGS and program in SETTINGS["names"]:
             self.description = SETTINGS["names"][program]
         else:
-            self.description = "Wasprogramma " +str(program)
+            self.description = "Wasprogramma " + str(program)
         # get the transaction type
         self.transaction_type = program.split("_")[0]
 
-        #additional price for manned days
+        # additional price for manned days
         uptick = self.get_uptick()
 
         # determine the price
         self.amount = float(SETTINGS["prices"][program]) + float(uptick)
         print("Price: "
-              +str(SETTINGS["prices"][program])
-              +" + "
-              +str(uptick)
-              +" = "
-              +str(self.amount))
+              + str(SETTINGS["prices"][program])
+              + " + "
+              + str(uptick)
+              + " = "
+              + str(self.amount))
 
         # determine the margin
         self.margin = float(SETTINGS["margins"][self.transaction_type])

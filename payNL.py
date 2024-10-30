@@ -5,9 +5,10 @@ import json
 import requests
 from requests.auth import HTTPBasicAuth
 
-
 CONFIG = configparser.ConfigParser()
 CONFIG.read('config.ini')
+
+
 class PayNL():
     """Main Pay.nl class"""
     def __init__(self, settings):
@@ -45,7 +46,7 @@ class PayNL():
         return self.start_transaction(order.amount, order.description, order.id, order.transaction_type, order.program)
 
     def pay_card_upgrade(self, amount=0, card={}):
-        return self.start_transaction(amount, 'washcard top-up', 'top-up', 'TOPUP_'+str(amount), 'TOPUP')
+        return self.start_transaction(amount, 'washcard top-up', 'top-up', 'TOPUP_' + str(amount), 'TOPUP')
 
     def start_transaction(self, amount=0, description='', reference='', extra1='', extra2=''):
         transactionId = ''
@@ -65,7 +66,7 @@ class PayNL():
             "returnUrl": "https://demo.pay.nl/complete/",
             "exchangeUrl": "https://demo.pay.nl/exchange.php",
             "amount": {
-                "value": int(amount*100),
+                "value": int(amount * 100),
                 "currency": "EUR"
             },
             "paymentMethod": {

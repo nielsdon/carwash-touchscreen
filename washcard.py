@@ -14,16 +14,17 @@ from googleAnalytics import GoogleAnalytics
 CONFIG = configparser.ConfigParser()
 CONFIG.read('config.ini')
 API_URL = 'https://api.washterminalpro.nl'
-if CONFIG.get('General','testMode') == 'True':
+if CONFIG.get('General', 'testMode') == 'True':
     API_PATH = '/dev'
 else:
     API_PATH = '/v1'
 
+
 class Washcard():
     """ Class to handle everything related to the wash cards """
-    cardInfoUrl = API_URL +API_PATH +'/card/%s'
-    cardBalanceUrl = API_URL +API_PATH +'/card/%s/balance'
-    cardTransactionUrl = API_URL +API_PATH +'/transaction/start'
+    cardInfoUrl = API_URL + API_PATH + '/card/%s'
+    cardBalanceUrl = API_URL + API_PATH + '/card/%s/balance'
+    cardTransactionUrl = API_URL + API_PATH + '/transaction/start'
     settings = {}
     id = 0
     uid = ''
@@ -111,7 +112,7 @@ class Washcard():
     def pay(self, order):
         """ initialize payment of selected program """
         logging.debug('Paying order %s', order.description)
-        response = self.start_transaction(order.amount*-1,
+        response = self.start_transaction(order.amount * -1,
                                           order.description,
                                           order.transaction_type)
         return response
@@ -119,7 +120,7 @@ class Washcard():
     def upgrade(self, amount):
         """ initialize topup """
         logging.debug('Upgrading card %s with € %s', self.uid, str(amount))
-        response = self.start_transaction(amount, 'Card top-up', 'TOPUP_' +str(amount))
+        response = self.start_transaction(amount, 'Card top-up', 'TOPUP_' + str(amount))
         return response
 
     def start_transaction(self, amount=0, description='', transaction_type=''):

@@ -46,7 +46,7 @@ class Payment(Screen):
             washcard = Washcard(self.settings)
             response = washcard.pay(app.activeOrder)
             logging.debug(response)
-            app.changeScreen('payment_success')
+            app.change_screen('payment_success')
         elif self.cancel_transaction.is_set():
             logging.debug('transaction cancelled')
             self.cancel_transaction.clear()
@@ -55,7 +55,7 @@ class Payment(Screen):
         else:
             logging.debug('some payment error')
             #self.pay.cancelTransaction(self.transaction_id)
-            Clock.schedule_once(lambda dt: app.changeScreen('payment_failed'))
+            Clock.schedule_once(lambda dt: app.change_screen('payment_failed'))
 
     def cancel(self, *args, **kwargs):
         logging.debug("=== Cancelling PIN payment ===")

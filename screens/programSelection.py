@@ -12,13 +12,13 @@ class ProgramSelection(Screen):
         for idx, data in enumerate(SETTINGS["general"]["defaultPrograms"], start=0):
             buttonLabel = SETTINGS["names"][data]
             btn = Factory.BorderedButton(text=buttonLabel)
-            btn.bind(on_release=lambda instance, program=data: self.selectProgram(program))
+            btn.bind(on_release=lambda instance, program=data: self.select_program(program))
             layout.add_widget(btn)
         
     def on_enter(self, *args, **kwargs):
         logging.debug("=== Program selection ===")
         super().on_enter(*args, **kwargs)
 
-    def selectProgram(self, program):
+    def select_program(self, program):
         app = App.get_running_app()
-        app.selectProgram(program)
+        app.select_program(program)

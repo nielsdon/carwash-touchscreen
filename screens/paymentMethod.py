@@ -5,12 +5,12 @@ class PaymentMethod(Screen):
     def selectPin(self):
         print("PIN clicked")
         app = App.get_running_app()
-        app.changeScreen('payment')
+        app.change_screen('payment')
 
     def selectWashcard(self):
         print("Washcard clicked")
         app = App.get_running_app()
-        app.changeScreen('payment_washcard')
+        app.change_screen('payment_washcard')
 
     def cancel(self):
         print("Cancel clicked")

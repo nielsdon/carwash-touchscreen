@@ -34,14 +34,19 @@ class Order():
 
         # determine the price
         self.amount = float(SETTINGS["prices"][program]) + float(uptick)
-        print("Price: " +str(SETTINGS["prices"][program]) +" + " +str(uptick) +" = " +str(self.amount))
+        print("Price: "
+              +str(SETTINGS["prices"][program])
+              +" + "
+              +str(uptick)
+              +" = "
+              +str(self.amount))
 
         # determine the margin
         self.margin = float(SETTINGS["margins"][self.transaction_type])
-        
+
         # determine order ID
         try:
-            file = open('orderId.txt', 'r+')
+            file = open('orderId.txt', 'r+', encoding='utf-8')
             read = file.read()
             logging.debug('orderId: %s', read)
             if read:
@@ -55,29 +60,30 @@ class Order():
             file.close()
 
     def get_uptick(self):
+        """ determine price uptick based on manned days """
         # Get the current datetime
         now = datetime.now()
-        current_weekday = now.weekday()
-        current_time = now.time()
-        
-        manned_days = SETTINGS["general"]["mannedDays"]
-        logging.debug("Current time: %s", current_time)
-        logging.debug("Current current_weekday: %s", str(current_weekday))
-            
-        for day in manned_days:
+        currentWeekday = now.weekday()
+        currentTime = now.time()
+        mannedDays = SETTINGS["general"]["mannedDays"]
+        logging.debug("Current time: %s", currentTime)
+        logging.debug("Current current_weekday: %s", str(currentWeekday))
+
+        for day in mannedDays:
             logging.debug("Day:")
             logging.debug(day)
-            logging.debug("Comparing weekday %s and %s", str(day["weekday"]), str(current_weekday))
-            if day["weekday"] == current_weekday:
+            logging.debug("Comparing weekday %s and %s", str(day["weekday"]), str(currentWeekday))
+            if day["weekday"] == currentWeekday:
                 if "start" in day and "end" in day:
-                    if self.is_within_time_range(day["start"], day["end"], current_time):
+                    if self.is_within_time_range(day["start"], day["end"], currentTime):
                         print("The current date and time are within the manned time ranges.")
                         return SETTINGS["general"]["mannedUptick"]
         print("The current date and time are not within the manned time ranges.")
         return 0
-        
+
     # Function to check if current time is within range
     def is_within_time_range(self, start, end, current_time):
-        start_time = time.fromisoformat(start)
-        end_time = time.fromisoformat(end)
-        return start_time <= current_time <= end_time
+        """ helper function to determine if current time is between two times """
+        startTime = time.fromisoformat(start)
+        endTime = time.fromisoformat(end)
+        return startTime <= current_time <= endTime

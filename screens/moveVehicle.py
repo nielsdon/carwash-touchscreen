@@ -5,4 +5,4 @@ class MoveVehicle(Screen):
 
     def upgrade_washcard(self):
         app = App.get_running_app()
-        app.changeScreen("upgrade_washcard_read_card")
+        app.change_screen("upgrade_washcard_read_card")

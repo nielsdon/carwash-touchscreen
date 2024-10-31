@@ -1,12 +1,10 @@
 #!/bin/bash
 
-# Wait until eth0 is up
-while ! ip link show eth0 | grep "state UP"; do
-  echo "Waiting for network interface to be up..."
+# Wait until either eth0 or wlan0 is up
+while ! (ip link show eth0 | grep -q "state UP" || ip link show wlan0 | grep -q "state UP"); do
+  echo "Waiting for network interface (eth0 or wlan0) to be up..."
   sleep 5
 done
-
-# Network is up, proceed with the rest of the script
 echo "Network is up, continuing with updates..."
 
 # Loop until GitHub is reachable

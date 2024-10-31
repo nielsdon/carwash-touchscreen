@@ -132,11 +132,14 @@ class Carwash(App):
         self.sm = ScreenManager(transition=NoTransition())
         self.load_screens()
         # show the test label with IP address in test mode
+        screen = self.sm.get_screen("program_selection")
+        screenHigh = self.sm.get_screen("program_selection_high")
+        if self.SETTINGS["general"]["programSelectionText"]:
+            screen.ids.welcome_text.text = self.SETTINGS["general"]["programSelectionText"]
+            screenHigh.ids.welcome_text.text = self.SETTINGS["general"]["programSelectionText"]
         if TEST_MODE:
-            screen = self.sm.get_screen("program_selection")
             screen.ids.test_label.text = "TEST - " + self.ip_address
-            screen = self.sm.get_screen("program_selection_high")
-            screen.ids.test_label.text = "TEST - " + self.ip_address
+            screenHigh.ids.test_label.text = "TEST - " + self.ip_address
         # start operation
         self.show_start_screen()
         return self.sm

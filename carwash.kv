@@ -42,6 +42,7 @@
       pos_hint: {'x': 0, 'top': 1.0}  # Position top-left corner
       opacity: 1 if app.TEST_MODE else 0  # Conditional visibility
     Label:
+      id: welcome_text
       text: "Spiegels ingeklapt?\nAntenne verwijderd?"
       font_size: heading_font_size
       color: app.textColor

@@ -168,9 +168,9 @@ class Carwash(App):
         response.raise_for_status()
 
         data = response.json()
-        self.carwash_name = data["carwash_name"]
-        self.carwash_id = data["carwash_id"]
-        self.SETTINGS = data
+        self.carwash_id = data["id"]
+        self.carwash_name = data["name"]
+        self.SETTINGS = data["settings"]
 
         if "general" in self.SETTINGS:
             self.SETTINGS["general"]["carwashId"] = self.carwash_id

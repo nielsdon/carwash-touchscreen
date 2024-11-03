@@ -10,9 +10,9 @@ class AuthClient:
         self.api_token = api_token
         self.api_secret = api_secret
         self.jwt_token = None
+        self.encryption_key = self.load_encryption_key()
         self.refresh_token = self.load_refresh_token()  # Load refresh token if available
         self.token_expiry_time = 0  # Track token expiration
-        self.encryption_key = self.load_encryption_key()
 
         # Authenticate initially to obtain tokens
         if not self.jwt_token or not self.refresh_token:

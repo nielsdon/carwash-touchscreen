@@ -5,7 +5,6 @@ import configparser
 import locale
 import logging
 import time
-import json
 import netifaces
 import pigpio
 import requests
@@ -16,6 +15,7 @@ from kivy.core.window import Window
 from kivy.logger import Logger
 from kivy.uix.screenmanager import NoTransition, ScreenManager, ScreenManagerException
 from washingOrder import Order
+from auth_client import AuthClient
 from googleAnalytics import GoogleAnalytics
 
 from screens.paymentFailed import PaymentFailed
@@ -91,19 +91,8 @@ class Carwash(App):
         # Get the IP address
         self.ip_address = self.get_ip_address()
 
-        # Initialize API connection and settings
-        url = f'https://api.washterminalpro.nl/{API_PATH}/login/'
-        response = requests.post(url, json={
-            "username": API_TOKEN,
-            "password": API_SECRET
-        }, timeout=10)
-        if response.status_code != 200:
-            response.raise_for_status()
-
-        responseData = response.json()
-        self.carwash_name = responseData["carwash_name"]
-        self.carwash_id = responseData["carwash_id"]
-        self.jwt_token = responseData["jwt"]
+        # Initialize AuthClient for managing authentication
+        self.auth_client = AuthClient(API_PATH, API_TOKEN, API_SECRET)
         self.load_settings()
 
         # Setup window and screen manager
@@ -172,15 +161,18 @@ class Carwash(App):
         self.sm.add_widget(InProgress(name="in_progress"))
 
     def load_settings(self):
-        """loads settings from DB"""
-        url = f'https://api.washterminalpro.nl/{API_PATH}/carwash'
-        headers = {"Authorization": f'Bearer {self.jwt_token}'}
+        """Load initial carwash details using AuthClient for authentication."""
+        url = f'https://api.washterminalpro.nl/{self.auth_client.api_path}/carwash'
+        headers = self.auth_client.get_authorization_header()
         response = requests.get(url, headers=headers, timeout=10)
-        if response.status_code != 200:
-            response.raise_for_status()
-        self.SETTINGS = json.loads(response.text)
+        response.raise_for_status()
+
+        data = response.json()
+        self.carwash_name = data["carwash_name"]
+        self.carwash_id = data["carwash_id"]
+        self.SETTINGS = data
+
         if "general" in self.SETTINGS:
-            self.SETTINGS["general"]["jwtToken"] = self.jwt_token
             self.SETTINGS["general"]["carwashId"] = self.carwash_id
             self.buttonBackgroundColor = self.SETTINGS["general"]["buttonBackgroundColor"]
             self.buttonTextColor = self.SETTINGS["general"]["buttonTextColor"]
@@ -296,16 +288,16 @@ class Carwash(App):
             pi.set_mode(int(self.SETTINGS["gpio"]["highVehicle"]), pigpio.INPUT)
             pi.set_mode(int(self.SETTINGS["gpio"]["stopVehicle"]), pigpio.INPUT)
 
+            pi.set_pull_up_down(int(self.SETTINGS["gpio"]["errorInput"]), pigpio.PUD_DOWN)
+            pi.set_pull_up_down(int(self.SETTINGS["gpio"]["busyInput"]), pigpio.PUD_DOWN)
+            pi.set_pull_up_down(int(self.SETTINGS["gpio"]["highVehicle"]), pigpio.PUD_DOWN)
+            pi.set_pull_up_down(int(self.SETTINGS["gpio"]["stopVehicle"]), pigpio.PUD_DOWN)
+
             # check inputs
             logging.debug("STOP: %s", str(pi.read(int(self.SETTINGS["gpio"]["stopVehicle"]))))
             logging.debug("ERROR: %s", str(pi.read(int(self.SETTINGS["gpio"]["errorInput"]))))
             logging.debug("BUSY: %s", str(pi.read(int(self.SETTINGS["gpio"]["busyInput"]))))
             logging.debug("HIGH: %s", str(pi.read(int(self.SETTINGS["gpio"]["highVehicle"]))))
-
-            pi.set_pull_up_down(int(self.SETTINGS["gpio"]["errorInput"]), pigpio.PUD_DOWN)
-            pi.set_pull_up_down(int(self.SETTINGS["gpio"]["busyInput"]), pigpio.PUD_DOWN)
-            pi.set_pull_up_down(int(self.SETTINGS["gpio"]["highVehicle"]), pigpio.PUD_DOWN)
-            pi.set_pull_up_down(int(self.SETTINGS["gpio"]["stopVehicle"]), pigpio.PUD_DOWN)
 
             # Machine in progress/done
             pi.callback(int(self.SETTINGS["gpio"]["busyInput"]),

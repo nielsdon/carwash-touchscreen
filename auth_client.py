@@ -22,9 +22,11 @@ class AuthClient:
         """Load or generate an encryption key for secure storage."""
         key_path = "secret.key"
         if os.path.exists(key_path):
+            print('Reading encryption key')
             with open(key_path, "rb") as key_file:
                 return key_file.read()
         else:
+            print('Creating encryption key')
             key = Fernet.generate_key()
             with open(key_path, "wb") as key_file:
                 key_file.write(key)
@@ -32,6 +34,7 @@ class AuthClient:
 
     def save_refresh_token(self, token):
         """Encrypt and save the refresh token."""
+        print('Saving refresh token...')
         cipher = Fernet(self.encryption_key)
         encrypted_token = cipher.encrypt(token.encode())
         with open("refresh_token.enc", "wb") as token_file:
@@ -39,6 +42,7 @@ class AuthClient:
 
     def load_refresh_token(self):
         """Load and decrypt the refresh token if it exists."""
+        print('Loading refresh token...')
         if os.path.exists("refresh_token.enc"):
             cipher = Fernet(self.encryption_key)
             with open("refresh_token.enc", "rb") as token_file:
@@ -48,6 +52,7 @@ class AuthClient:
 
     def authenticate(self):
         """Initial authentication to obtain access and refresh tokens."""
+        print('Authenticating with username/password...')
         url = f'https://api.washterminalpro.nl/{self.api_path}/auth/login/'
         response = requests.post(url, json={
             "username": self.api_token,
@@ -66,6 +71,7 @@ class AuthClient:
 
     def refresh_auth_token(self):
         """Refresh the JWT token if it's expired using the refresh token."""
+        print('Refreshing access token...')
         url = f'https://api.washterminalpro.nl/{self.api_path}/auth/refresh/'
         response = requests.post(url, json={
             "token": self.refresh_token
@@ -83,6 +89,7 @@ class AuthClient:
 
     def get_authorization_header(self):
         """Get the Authorization header with a valid token, refreshing it if necessary."""
+        print('Retrieving the auth header...')
         if time.time() > self.token_expiry_time:
             self.refresh_auth_token()
         return {"Authorization": f'Bearer {self.jwt_token}'}

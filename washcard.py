@@ -24,6 +24,12 @@ class Washcard:
 
     def __init__(self, settings):
         self.settings = settings
+        self.uid = None
+        self.credit = 0
+        self.balance = 0
+        self.id = None
+        self.carwash = None
+        self.company = None
         logging.basicConfig(encoding='utf-8', level=int(self.settings["general"]["logLevel"]))
 
         # Initialize AuthClient for handling authorization and token refreshing
@@ -53,7 +59,9 @@ class Washcard:
     def load_info(self):
         """Store the retrieved card info in the class."""
         info = self.get_info()
-        if not info:
+        # Check if the info dictionary has an 'error' key
+        if not info or 'error' in info:
+            logging.error("Card info could not be loaded: %s", info.get("error", "Unknown error"))
             return False
         info = munchify(info)
         logging.debug('=====INFO: =====')
@@ -82,7 +90,7 @@ class Washcard:
         """Retrieve card info from API."""
         logging.debug('cardinfo(): getting info for card %s', self.uid)
         if not self.uid:
-            return {}
+            return {"error": "No UID provided"}
 
         url = self.cardInfoUrl % self.uid
         headers = self.auth_client.get_authorization_header()
@@ -90,11 +98,20 @@ class Washcard:
 
         try:
             response = requests.get(url, headers=headers, timeout=10)
+
+            # Check for a 404 status code to indicate the card was not found
+            if response.status_code == 404:
+                logging.warning('Card not found for UID %s', self.uid)
+                return {"error": "Card not found", "status_code": 404}
+
+            # Raise other HTTP errors
             response.raise_for_status()
+
             return response.json()
+
         except requests.exceptions.RequestException as e:
             logging.error('Error fetching card info:\n%s', str(e))
-            return {}
+            return {"error": "Request failed", "details": str(e)}
 
     def pay(self, order):
         """Initialize payment for the selected program."""
@@ -156,16 +173,20 @@ class Washcard:
                             if keyCode == evdev.ecodes.KEY_ENTER:
                                 logging.debug('NFC Card found: %s', nfcUid)
                                 self.uid = nfcUid
-                                self.load_info()
-                                callback()
+                                # Attempt to load card information
+                                if not self.load_info():
+                                    logging.error("Failed to process card: Card not found or loading failed.")
+                                try:
+                                    callback()
+                                except Exception as e:
+                                    logging.error("Error in callback execution: %s", e)
                                 return
         except (IOError, OSError) as e:
             logging.error("I/O error in NFC read loop: %s", e)
         except KeyboardInterrupt:
             logging.info("NFC read loop interrupted by user.")
         except Exception as e:
-            logging.error("Error in NFC read loop: %s", e)
+            logging.error("Unexpected error in NFC read loop: %s", e)
         finally:
             device.ungrab()
-            logging.debug("Card UID: %s", self.uid)
             logging.debug("Exiting NFC reader loop.")

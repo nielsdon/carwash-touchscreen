@@ -44,7 +44,7 @@ class GoogleAnalytics:
             return
         else:
             self.last_event = event_hash
-        logging.debug("Tracking:%s", event_name)
+        # logging.debug("Tracking:%s", event_name)
         url = f'https://www.google-analytics.com/mp/collect?measurement_id={self.measurement_id}&api_secret={self.api_secret}'
         headers = {"Content-Type": "application/json"}
         # Ensure event time is recent
@@ -59,8 +59,8 @@ class GoogleAnalytics:
                 }
             ]
         }
-        logging.debug("GA4 url:%s", url)
-        logging.debug("GA4 payload:%s", payload)
+        # logging.debug("GA4 url:%s", url)
+        # logging.debug("GA4 payload:%s", payload)
 
         if self.measurement_id:
             try:

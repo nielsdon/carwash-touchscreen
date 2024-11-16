@@ -27,7 +27,7 @@
   orientation: 'vertical'
   spacing: 5
   FullWidthImage:
-    source: 'logo.png'
+    source: 'images/logo.png'
 
 <ProgramSelection>:
   BaseLayout:
@@ -191,7 +191,7 @@
 <UpgradeWashcardPaymentFailed>:
   BaseLayout:
     Image:
-      source: 'error.png'
+      source: 'images/error.png'
       size: self.texture_size
     Label:
       text: "Betaling niet gelukt!"
@@ -201,7 +201,7 @@
 <UpgradeWashcardPaymentSuccess>:
   BaseLayout:
     Image:
-      source: 'success.png'
+      source: 'images/success.png'
       size: self.texture_size
     Label:
       text: "Opwaarderen gelukt!"
@@ -215,7 +215,7 @@
 <PaymentWashcardCardNotValid>:
   BaseLayout:
     Image:
-      source: 'error.png'
+      source: 'images/error.png'
       size: self.texture_size
     Label:
       text: "Waspas niet geldig"
@@ -225,7 +225,7 @@
 <UpgradeWashcardCredit>:
   BaseLayout:
     Image:
-      source: 'error.png'
+      source: 'images/error.png'
       size: self.texture_size
     Label:
       text: "Credit waspassen kun\nje niet opwaarderen"
@@ -235,7 +235,7 @@
 <PaymentWashcardWrongCarwash>:
   BaseLayout:
     Image:
-      source: 'error.png'
+      source: 'images/error.png'
       size: self.texture_size
     Label:
       text: "Waspas alleen geldig bij:"
@@ -250,7 +250,7 @@
 <PaymentWashcardCardNotFound>:
   BaseLayout:
     Image:
-      source: 'error.png'
+      source: 'images/error.png'
       size: self.texture_size
     Label:
       text: "Geen waspas gevonden"
@@ -260,7 +260,7 @@
 <PaymentWashcardInsufficientBalance>:
   BaseLayout:
     Image:
-      source: 'error.png'
+      source: 'images/error.png'
       size: self.texture_size
     Label:
       text: "Onvoldoende saldo"
@@ -275,7 +275,7 @@
 <PaymentFailed>:
   BaseLayout:
     Image:
-      source: 'error.png'
+      source: 'images/error.png'
       size: self.texture_size
     Label:
       text: "Betaling niet gelukt!"
@@ -285,7 +285,7 @@
 <PaymentSuccess>:
   BaseLayout:
     Image:
-      source: 'success.png'
+      source: 'images/success.png'
       size: self.texture_size
     Label:
       text: "Betaling gelukt!"
@@ -317,7 +317,23 @@
       font_size: heading_font_size
       color: app.textColor
     FullWidthImage:
-      source: 'progress.zip'
+      source: 'images/progress.zip'
+      anim_delay: 0.05
+
+<Finished>:
+  BaseLayout:
+    Label:
+      text: "Wassen klaar!"
+      font_size: heading_font_size
+      color: app.textColor
+
+    Label:
+      text: "U kunt uitrijden"
+      font_size: default_font_size
+      color: app.textColor
+      
+    FullWidthImage:
+      source: 'images/washing_done.zip'
       anim_delay: 0.05
 
 <MoveVehicle>:
@@ -329,7 +345,7 @@
       color: app.textColor
 
     Image:
-      source: 'arrow_up.png'
+      source: 'images/arrow_up.png'
 
     Label:
       width: self.parent.width
@@ -345,7 +361,7 @@
 <Error>:
   BaseLayout:
     Image:
-      source: 'error.png'
+      source: 'images/error.png'
       size: self.texture_size
     Label:
       text: "Storing"

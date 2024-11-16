@@ -358,8 +358,12 @@ class Carwash(App):
         if self.busy != pi.read(int(self.SETTINGS["gpio"]["busyInput"])):
             logging.debug("Input changed: BUSY | value = %s",
                           str(pi.read(int(self.SETTINGS["gpio"]["busyInput"]))))
+            # washing has finished: show finish screen
             self.busy = pi.read(int(self.SETTINGS["gpio"]["busyInput"]))
-            self.show_start_screen()
+            if self.busy == 0:
+                self.show_finish_screen()
+            else:
+                self.show_start_screen()
 
     @mainthread
     def error_input_changed(self, *_):
@@ -410,3 +414,8 @@ class Carwash(App):
             self.change_screen("program_selection_high")
             return
         self.change_screen("program_selection")
+
+    @mainthread
+    def show_finish_screen(self, *_):
+        """ show the finish screen for 10 seconds """
+        self.change_screen("finished")

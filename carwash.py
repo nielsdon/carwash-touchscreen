@@ -21,6 +21,7 @@ from googleAnalytics import GoogleAnalytics
 from screens.paymentFailed import PaymentFailed
 from screens.error import Error
 from screens.inProgress import InProgress
+from screens.finished import Finished
 from screens.moveVehicle import MoveVehicle
 from screens.payment import Payment
 from screens.paymentMethod import PaymentMethod
@@ -159,6 +160,7 @@ class Carwash(App):
         self.sm.add_widget(UpgradeWashcardPaymentFailed(name="upgrade_washcard_payment_failed"))
         self.sm.add_widget(Error(name="error"))
         self.sm.add_widget(InProgress(name="in_progress"))
+        self.sm.add_widget(Finished(name="finished"))
 
     def load_settings(self):
         """Load initial carwash details using AuthClient for authentication."""

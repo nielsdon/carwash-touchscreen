@@ -71,14 +71,38 @@
       text: "Kies betaalmethode"
       font_size: heading_font_size
       color: app.textColor
-    BorderedButton:
-      text: "PIN"
+    Button:
       on_release:
         root.selectPin()
-    BorderedButton:
-      text: "Waspas"
+      background_normal: ''  # Disable the normal background
+      background_down: ''    # Disable the down state background
+      background_color: 1, 1, 1, 0  # Fully transparent background
+      BoxLayout:
+        pos: self.parent.pos
+        size: self.parent.size
+        # orientation: 'lr-tb'
+        spacing: 10
+        padding: 20
+        Image:
+          source: 'images/pin.png'
+          size_hint_y: None
+          height: self.parent.height - 40
+    Button:
       on_release:
         root.selectWashcard()
+      background_normal: ''  # Disable the normal background
+      background_down: ''    # Disable the down state background
+      background_color: 1, 1, 1, 0  # Fully transparent background
+      BoxLayout:
+        pos: self.parent.pos
+        size: self.parent.size
+        # orientation: 'lr-tb'
+        spacing: 10
+        padding: 20
+        Image:
+          source: 'images/washcard.png'
+          size_hint_y: None
+          height: self.parent.height - 40
     BorderedButton:
       text: "Annuleren"
       on_release:
@@ -323,15 +347,10 @@
 <Finished>:
   BaseLayout:
     Label:
-      text: "Wassen klaar!"
+      text: "Wassen klaar!\nU kunt uitrijden"
       font_size: heading_font_size
       color: app.textColor
 
-    Label:
-      text: "U kunt uitrijden"
-      font_size: default_font_size
-      color: app.textColor
-      
     FullWidthImage:
       source: 'images/washing_done.zip'
       anim_delay: 0.13

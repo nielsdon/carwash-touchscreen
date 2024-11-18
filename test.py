@@ -2,6 +2,9 @@ from kivy.app import App
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
 from kivy.properties import StringProperty
+from kivy.core.window import Window
+import logging
+logging.basicConfig(level=logging.DEBUG)
 
 
 class CustomButton(Button):
@@ -15,6 +18,8 @@ class MyLayout(BoxLayout):
 
 
 class MyApp(App):
+    # Window.rotation = 90
+
     def build(self):
         return MyLayout()
 

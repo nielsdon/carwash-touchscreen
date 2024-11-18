@@ -205,7 +205,13 @@ class Carwash(App):
             "items": items,
             "location": "Netherlands"
         })
-        self.change_screen("payment_method")
+        # progress to next screen
+        if 'paynl' in self.SETTINGS:
+            # only show payment selection when a terminal is available
+            self.change_screen("payment_method")
+        else:
+            # otherwise, just pay with a washcard
+            self.change_screen("payment_washcard")
 
     def washcard_topup(self, amount):
         """" function to handle the card topups """

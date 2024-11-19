@@ -16,7 +16,9 @@ from kivy.logger import Logger
 from kivy.uix.screenmanager import NoTransition, ScreenManager, ScreenManagerException
 from washingOrder import Order
 from auth_client import AuthClient
-from googleAnalytics import GoogleAnalytics
+from google_analytics import GoogleAnalytics
+from telegraf_logger import TelegrafLogger
+from state_tracker import StateTracker
 
 from screens.paymentFailed import PaymentFailed
 from screens.error import Error
@@ -53,12 +55,12 @@ if not pi.connected:
     sys.exit()
 if TEST_MODE:
     API_PATH = 'dev'
-    os.environ['KIVY_NO_CONSOLELOG'] = '0'  # Enable console logging
+    os.environ['KIVY_NO_CONSOLELOG'] = '1'  # Enable console logging
     os.environ['KIVY_LOG_LEVEL'] = 'debug'  # Set log level to debug
 else:
     API_PATH = 'v1'
     os.environ['KIVY_NO_CONSOLELOG'] = '0'  # Enable console logging
-    os.environ['KIVY_LOG_LEVEL'] = 'debug'  # Set log level to debug
+    os.environ['KIVY_LOG_LEVEL'] = 'error'  # Set log level to error
 
 locale.setlocale(locale.LC_ALL, 'nl_NL.UTF-8')
 
@@ -96,14 +98,13 @@ class Carwash(App):
         self.auth_client = AuthClient(API_PATH, API_TOKEN, API_SECRET)
         self.load_settings()
 
+        # initialize trackers
+        self.init_trackers()
+
         # Setup window and screen manager
         Window.rotation = 90
         Window.show_cursor = False
         self.setupIO()
-
-        # Setup Google Analytics
-        self.ga = GoogleAnalytics()
-
         self.sm = None
 
     def get_ip_address(self):
@@ -185,25 +186,40 @@ class Carwash(App):
             Logger.setLevel(int(self.SETTINGS["general"]["logLevel"]))
             logging.basicConfig(encoding='utf-8', level=int(self.SETTINGS["general"]["logLevel"]))
 
+    def init_trackers(self):
+        # Initialize the Google Analytics Logger
+        if 'measurement_id' in CONFIG['GA4']:
+            measurement_id = CONFIG['GA4']['measurement_id']
+        if CONFIG.get('General', 'testMode') == 'True':
+            if 'measurement_id_dev' in CONFIG['GA4']:
+                measurement_id = CONFIG['GA4']['measurement_id_dev']
+        else:
+            if 'measurement_id_prod' in CONFIG['GA4']:
+                measurement_id = CONFIG['GA4']['measurement_id_prod']
+
+        api_secret = CONFIG['GA4']['api_secret']
+        client_id = CONFIG['GA4']['client_id']
+        ga_logger = GoogleAnalytics(measurement_id, api_secret, client_id)
+
+        # Initialize the Telegraf Logger
+        telegraf_logger = TelegrafLogger(
+            telegraf_url="http://localhost:8080/telegraf"
+        )
+
+        self.tracker = StateTracker(ga_logger, telegraf_logger, self.carwash_name)
+
     def select_program(self, program):
         """" function that is called from the program-selection screens """
         logging.debug("Program selected: %s", str(program))
         order = Order(program, self.SETTINGS)
         self.activeOrder = order
-        self.ga.start_new_session()
-        items = [{
+        self.tracker.add_to_cart({
             "item_id": str(program),
             "item_name": order.description,
             "item_brand": self.carwash_name,
             "item_category": order.transaction_type,
             "quantity": 1,
             "price": order.amount
-        }]
-        self.ga.send_event("add_to_cart", {
-            "currency": "EUR",
-            "value": order.margin,
-            "items": items,
-            "location": "Netherlands"
         })
         # progress to next screen
         if 'paynl' in self.SETTINGS:
@@ -218,39 +234,17 @@ class Carwash(App):
         self.washcardTopup = amount
         self.ga.start_new_session()
         productName = "TOPUP_" + str(amount)
-        items = [{
+        self.tracker.add_to_cart({
             "item_id": productName,
             "item_name": productName,
             "item_brand": self.carwash_name,
             "item_category": "TOPUP",
             "quantity": 1,
             "price": self.SETTINGS["prices"][productName]
-        }]
-        self.ga.send_event("add_to_cart", {
-            "currency": "EUR",
-            "value": self.SETTINGS["margins"][productName],
-            "items": items,
-            "location": "Netherlands"
         })
 
     def startMachine(self):
         """ method to physically switch on the machine with the selected program """
-        # log with google analytics
-        items = [{
-            "item_id": self.activeOrder.program,
-            "item_name": self.activeOrder.description,
-            "item_brand": self.carwash_name,
-            "item_category": self.activeOrder.transaction_type,
-            "quantity": 1,
-            "price": self.activeOrder.amount
-        }]
-        self.ga.send_event("purchase", {
-            "transaction_id": self.activeOrder.id,
-            "currency": "EUR",
-            "value": self.activeOrder.margin,
-            "items": items,
-            "location": "Netherlands"
-        })
         # transform WASH_1 to 1
         programNumber = int(self.activeOrder.program[5:])
         binProgramNumber = '{0:04b}'.format(programNumber)
@@ -271,8 +265,10 @@ class Carwash(App):
         pi.write(int(self.SETTINGS["gpio"]["BIT4LED"]), 1)
         pi.write(int(self.SETTINGS["gpio"]["BIT8LED"]), 1)
 
-        # track with google analytics
-        self.ga.send_event("machine_start", {"program": self.activeOrder.program})
+        # track purchase
+        self.tracker.purchase({
+            "transaction_id": self.activeOrder.id
+        })
 
     def setupIO(self):
         """ setup GPIO ports based on the carwash settings """
@@ -344,17 +340,12 @@ class Carwash(App):
     @mainthread
     def change_screen(self, screen_name):
         """ main function to switch screens """
-        logging.debug("Showing screen %s", screen_name)
-        self.ga.send_event("page_view", {
-            "page_title": screen_name,
-            "location": "Netherlands",
-            "firebase_screen": screen_name,
-            "firebase_screen_class": "python",
-            "firebase_screen_id": screen_name
-        })
-        logging.debug("Current screen:%s", str(self.sm.current))
+        logging.debug("Current screen: %s", str(self.sm.current))
+        logging.debug("Switching to screen %s", screen_name)
+
         try:
             self.sm.current = screen_name
+            self.tracker.set_page(self.sm.current, busy=self.busy, high_vehicle=self.high, error=self.error, stop=self.in_position)
         except ScreenManagerException as e:
             logging.error("Error changing screen:")
             logging.error(e)
@@ -368,8 +359,10 @@ class Carwash(App):
                           str(pi.read(int(self.SETTINGS["gpio"]["busyInput"]))))
             # washing has finished: show finish screen
             self.busy = pi.read(int(self.SETTINGS["gpio"]["busyInput"]))
+            # track state change
+            self.tracker.set_page(self.sm.current, busy=self.busy, high_vehicle=self.high, error=self.error, stop=self.in_position)
             if self.busy == 0:
-                self.show_finish_screen()
+                self.change_screen("finished")
             else:
                 self.show_start_screen()
 
@@ -379,6 +372,8 @@ class Carwash(App):
         if self.error != pi.read(int(self.SETTINGS["gpio"]["errorInput"])):
             logging.debug("Input changed: ERROR | value = %s", str(pi.read(int(self.SETTINGS["gpio"]["errorInput"]))))
             self.error = pi.read(int(self.SETTINGS["gpio"]["errorInput"]))
+            # track state change
+            self.tracker.set_page(self.sm.current, busy=self.busy, high_vehicle=self.high, error=self.error, stop=self.in_position)
             self.show_start_screen()
 
     @mainthread
@@ -388,6 +383,8 @@ class Carwash(App):
             logging.debug("Input changed: HIGH | value = %s",
                           str(pi.read(int(self.SETTINGS["gpio"]["highVehicle"]))))
             self.high = pi.read(int(self.SETTINGS["gpio"]["highVehicle"]))
+            # track state change
+            self.tracker.set_page(self.sm.current, busy=self.busy, high_vehicle=self.high, error=self.error, stop=self.in_position)
             # don't interrupt any other screens
             if self.sm.current in ["program_selection", "program_selection_high"]:
                 self.show_start_screen()
@@ -399,6 +396,8 @@ class Carwash(App):
             logging.debug("Input changed: STOP | value = %s",
                           str(pi.read(int(self.SETTINGS["gpio"]["stopVehicle"]))))
             self.in_position = pi.read(int(self.SETTINGS["gpio"]["stopVehicle"]))
+            # track state change
+            self.tracker.set_page(self.sm.current, busy=self.busy, high_vehicle=self.high, error=self.error, stop=self.in_position)
             self.show_start_screen()
 
     @mainthread
@@ -422,8 +421,3 @@ class Carwash(App):
             self.change_screen("program_selection_high")
             return
         self.change_screen("program_selection")
-
-    @mainthread
-    def show_finish_screen(self, *_):
-        """ show the finish screen for 10 seconds """
-        self.change_screen("finished")

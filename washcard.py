@@ -6,7 +6,7 @@ import subprocess
 import requests
 import evdev
 from munch import munchify
-from googleAnalytics import GoogleAnalytics
+from google_analytics import GoogleAnalytics
 from auth_client import AuthClient  # Import AuthClient from the auth module
 
 # Configuration setup

@@ -14,9 +14,13 @@ class AuthClient:
         self.refresh_token = self.load_refresh_token()  # Load refresh token if available
         self.token_expiry_time = 0  # Track token expiration
 
-        # Authenticate initially to obtain tokens
-        if not self.jwt_token or not self.refresh_token:
+        # Authenticate or refresh token if needed
+        if not self.refresh_token:
+            print("No refresh token found. Performing full authentication.")
             self.authenticate()
+        elif self.is_token_expired():
+            print("Access token expired. Refreshing token.")
+            self.refresh_access_token()
 
     def load_encryption_key(self):
         """Load or generate an encryption key for secure storage."""
@@ -50,6 +54,10 @@ class AuthClient:
             return cipher.decrypt(encrypted_token).decode()
         return None
 
+    def is_token_expired(self):
+        # Check if the token is expired (considering a buffer for safety)
+        return time.time() > self.token_expiry_time - 60  # Refresh 60 seconds before expiry
+
     def authenticate(self):
         """Initial authentication to obtain access and refresh tokens."""
         print('Authenticating with username/password...')
@@ -69,7 +77,7 @@ class AuthClient:
         if self.refresh_token:
             self.save_refresh_token(self.refresh_token)
 
-    def refresh_auth_token(self):
+    def refresh_access_token(self):
         """Refresh the JWT token if it's expired using the refresh token."""
         print('Refreshing access token...')
         url = f'https://api.washterminalpro.nl/{self.api_path}/auth/refresh/'
@@ -91,5 +99,5 @@ class AuthClient:
         """Get the Authorization header with a valid token, refreshing it if necessary."""
         print('Retrieving the auth header...')
         if time.time() > self.token_expiry_time:
-            self.refresh_auth_token()
+            self.refresh_access_token()
         return {"Authorization": f'Bearer {self.jwt_token}'}

@@ -6,7 +6,6 @@ import subprocess
 import requests
 import evdev
 from munch import munchify
-from google_analytics import GoogleAnalytics
 from auth_client import AuthClient  # Import AuthClient from the auth module
 
 # Configuration setup
@@ -35,8 +34,6 @@ class Washcard:
         # Initialize AuthClient for handling authorization and token refreshing
         self.auth_client = AuthClient(API_PATH, CONFIG.get('General', 'apiToken'), CONFIG.get('General', 'apiSecret'))
 
-        # Set up Google Analytics and device settings
-        self.ga = GoogleAnalytics()
         self.stop_event = threading.Event()  # Event object for stopping NFC read loop
         self.device = self.find_event_device(self.settings["general"]["nfcReaderVendorIdDeviceId"])
         if not self.device:

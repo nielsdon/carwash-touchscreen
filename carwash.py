@@ -232,7 +232,6 @@ class Carwash(App):
     def washcard_topup(self, amount):
         """" function to handle the card topups """
         self.washcardTopup = amount
-        self.ga.start_new_session()
         productName = "TOPUP_" + str(amount)
         self.tracker.add_to_cart({
             "item_id": productName,

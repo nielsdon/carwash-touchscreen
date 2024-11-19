@@ -264,6 +264,9 @@ class Carwash(App):
         pi.write(int(self.SETTINGS["gpio"]["BIT4LED"]), 1)
         pi.write(int(self.SETTINGS["gpio"]["BIT8LED"]), 1)
 
+        # track event
+        self.tracker.set_page(self.sm.current, start_machine=1, busy=self.busy, high_vehicle=self.high, error=self.error, stop=self.in_position)
+
         # track purchase
         self.tracker.purchase({
             "transaction_id": self.activeOrder.id

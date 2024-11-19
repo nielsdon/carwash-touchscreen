@@ -18,6 +18,6 @@ class TelegrafLogger:
         try:
             response = requests.post(self.telegraf_url, data="\n".join(data), timeout=10)
             response.raise_for_status()
-            logging.debug("Telegraf metrics sent successfully!")
+            logging.debug('Telegraf metrics sent successfully! Data: %s', data)
         except requests.exceptions.RequestException as e:
             logging.error(f"Error sending metrics to Telegraf: {e}")

@@ -16,6 +16,7 @@ class Order():
     amount = 0
     margin = 0
     id = 0
+    transaction_id = 0
 
     def __init__(self, program, settings):
         self.program = program

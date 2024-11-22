@@ -12,7 +12,7 @@ class Payment(Screen):
     transaction_id = 0
     settings = {}
 
-    def on_enter(self, _, __):
+    def on_enter(self, *args, **kwargs):
         logging.debug("=== Payment ===")
         app = App.get_running_app()
         self.settings = app.SETTINGS
@@ -88,6 +88,6 @@ class Payment(Screen):
             )
             Clock.schedule_once(lambda dt: app.change_screen("payment_failed"))
 
-    def cancel(self, _, __):
+    def cancel(self, *args, **kwargs):
         logging.debug("=== Cancelling PIN payment ===")
         self.cancel_transaction = True

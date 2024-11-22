@@ -1,18 +1,15 @@
 class StateTracker:
-    def __init__(self, ga_logger, telegraf_logger, carwash_name):
+    def __init__(self, ga_logger, telegraf_logger):
         self.current_page = None
         self.attributes = {}
         self.ga_logger = ga_logger
         self.telegraf_logger = telegraf_logger
-        self.carwash_name = carwash_name
         self.cart = []  # Track items added to the cart
 
     def set_page(self, page_name, **attributes):
         """
         Sets the current page and its attributes and logs the change.
         """
-        # Add "carwash" to attributes
-        attributes = {**attributes, "carwash": self.carwash_name}
 
         # Log the state to Google Analytics
         if page_name != self.current_page:
@@ -40,7 +37,7 @@ class StateTracker:
             self.add_payment_info("washcard")
 
         # Log the state to Telegraf
-        tags = {"page": page_name, "carwash": self.carwash_name}
+        tags = {"page": page_name}
         fields = {k: v for k, v in attributes.items() if isinstance(v, (int, float))}
         self.telegraf_logger.log_metrics("state_tracker", tags, fields)
 

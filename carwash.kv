@@ -2,6 +2,9 @@
 #:set heading_font_size "60sp"
 #:set error_color 1,0,0,1
 
+<Widget>:
+  font_name: 'DefaultFont'
+
 <BorderedButton@Button>:
   background_color: app.buttonBackgroundColor
   background_normal: ''  # Disable the default background image
@@ -20,7 +23,7 @@
 <BaseLayout@BoxLayout>:
   canvas.before:
     Color:
-      rgba: 1, 1, 1, 1
+      rgba: app.backgroundColor
     Rectangle:
       pos: self.pos
       size: self.size
@@ -379,6 +382,10 @@
 
 <Error>:
   BaseLayout:
+    Label:
+      text: ""
+      font_size: heading_font_size
+      color: error_color
     Image:
       source: 'images/error.png'
       size: self.texture_size

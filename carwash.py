@@ -14,6 +14,7 @@ from kivy.clock import mainthread
 from kivy.core.window import Window
 from kivy.logger import Logger
 from kivy.uix.screenmanager import NoTransition, ScreenManager, ScreenManagerException
+from kivy.core.text import LabelBase
 from washingOrder import Order
 from auth_client import AuthClient
 from google_analytics import GoogleAnalytics
@@ -63,6 +64,9 @@ else:
     os.environ['KIVY_LOG_LEVEL'] = 'error'  # Set log level to error
 
 locale.setlocale(locale.LC_ALL, 'nl_NL.UTF-8')
+# Register the custom font
+LabelBase.register(name="DefaultFont", fn_regular="InstrumentSans-VariableFont_wdth.ttf")
+# print("Registered fonts:", LabelBase._fonts)  # Prints all registered fonts
 
 
 class Carwash(App):
@@ -120,6 +124,10 @@ class Carwash(App):
 
     def build(self):
         """ Create and return the root widget (ScreenManager)"""
+        # Use the custom font globally
+        self.theme_cls = {
+            "font_name": "DefaultFont"
+        }
         self.sm = ScreenManager(transition=NoTransition())
         self.load_screens()
         # show the test label with IP address in test mode

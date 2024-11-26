@@ -3,7 +3,6 @@ import logging
 import threading
 import select
 import subprocess
-import requests
 import evdev
 from munch import munchify
 from auth_client import AuthClient  # Import AuthClient from the auth module
@@ -90,25 +89,17 @@ class Washcard:
             return {"error": "No UID provided"}
 
         url = self.cardInfoUrl % self.uid
-        headers = self.auth_client.get_authorization_header()
         logging.debug('url: %s', url)
 
         try:
-            response = requests.get(url, headers=headers, timeout=10)
-
+            status_code, response = self.auth_client.make_authenticated_request(url)
             # Check for a 404 status code to indicate the card was not found
-            if response.status_code == 404:
+            if status_code == 404:
                 logging.warning('Card not found for UID %s', self.uid)
                 return {"error": "Card not found", "status_code": 404}
-
-            # Raise other HTTP errors
-            response.raise_for_status()
-
-            return response.json()
-
-        except requests.exceptions.RequestException as e:
-            logging.error('Error fetching card info:\n%s', str(e))
-            return {"error": "Request failed", "details": str(e)}
+            return response
+        except Exception as e:
+            print(f"Unexpected Error: {e}")
 
     def pay(self, order):
         """Initialize payment for the selected program."""
@@ -132,16 +123,17 @@ class Washcard:
             "description": description,
             "transaction_type": transaction_type
         }
-        headers = self.auth_client.get_authorization_header()
         logging.debug(data)
 
         try:
-            response = requests.post(url, headers=headers, json=data, timeout=10)
-            response.raise_for_status()
-            return response.json()
-        except requests.exceptions.RequestException as e:
-            logging.error('Error creating transaction:\n%s', str(e))
-            return 3  # Indicate a request error
+            status_code, response = self.auth_client.make_authenticated_request(url, "POST", data)
+            # Check for a 404 status code to indicate the card was not found
+            if status_code != 200:
+                return {"error": "Error creating transaction", "status_code": status_code}
+            return response
+        except Exception as e:
+            logging.error(f"Unexpected Error: {e}")
+            return 3
 
     def stop_reading(self):
         """Stop the NFC reading loop."""

@@ -7,7 +7,6 @@ import logging
 import time
 import netifaces
 import pigpio
-import requests
 
 from kivy.app import App
 from kivy.clock import mainthread
@@ -99,7 +98,12 @@ class Carwash(App):
         self.ip_address = self.get_ip_address()
 
         # Initialize AuthClient for managing authentication
-        self.auth_client = AuthClient(API_PATH, API_TOKEN, API_SECRET)
+        if TEST_MODE:
+            token_url = 'https://auth-dev.washterminalpro.nl/token'
+        else:
+            token_url = 'https://auth.washterminalpro.nl/token'
+
+        self.auth_client = AuthClient(API_TOKEN, API_SECRET, token_url)
         self.load_settings()
 
         # initialize trackers
@@ -173,12 +177,13 @@ class Carwash(App):
 
     def load_settings(self):
         """Load initial carwash details using AuthClient for authentication."""
-        url = f'https://api.washterminalpro.nl/{self.auth_client.api_path}/carwash'
-        headers = self.auth_client.get_authorization_header()
-        response = requests.get(url, headers=headers, timeout=10)
-        response.raise_for_status()
+        url = f'https://api.washterminalpro.nl/{API_PATH}/carwash'
+        try:
+            _, data = self.auth_client.make_authenticated_request(url)
+        except Exception as e:
+            print(f"Unexpected Error: {e}")
+            return
 
-        data = response.json()
         self.carwash_id = data["id"]
         self.carwash_name = data["name"]
         self.SETTINGS = data["settings"]
@@ -214,7 +219,7 @@ class Carwash(App):
             telegraf_url="http://localhost:8080/telegraf"
         )
 
-        self.tracker = StateTracker(ga_logger, telegraf_logger, self.carwash_name)
+        self.tracker = StateTracker(ga_logger, telegraf_logger)
 
     def select_program(self, program):
         """" function that is called from the program-selection screens """

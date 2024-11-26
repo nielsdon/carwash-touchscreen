@@ -23,7 +23,6 @@ class AuthClient:
         Fetch a new access token and store it in the session.
         """
         try:
-            logging.debug("Fetching access token...")
             token = self.oauth.fetch_token(
                 token_url=self.token_url,
                 client_id=self.client_id,
@@ -47,7 +46,6 @@ class AuthClient:
 
             # Perform the authenticated request
             response = self.oauth.request(method, url, json=data)
-            print(response.json)
 
             # Handle the response
             response.raise_for_status()  # Raise an error for 4xx/5xx responses

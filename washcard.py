@@ -12,6 +12,8 @@ CONFIG = configparser.ConfigParser()
 CONFIG.read('config.ini')
 API_URL = 'https://api.washterminalpro.nl'
 API_PATH = '/dev' if CONFIG.get('General', 'testMode') == 'True' else '/v1'
+TOKEN_URL_SUBDOMAIN_SUFFIX = '-dev' if CONFIG.get('General', 'testMode') == 'True' else '/'
+TOKEN_URL = 'https://auth' + TOKEN_URL_SUBDOMAIN_SUFFIX + '.washterminalpro.nl/token'
 
 
 class Washcard:
@@ -31,7 +33,7 @@ class Washcard:
         logging.basicConfig(encoding='utf-8', level=int(self.settings["general"]["logLevel"]))
 
         # Initialize AuthClient for handling authorization and token refreshing
-        self.auth_client = AuthClient(API_PATH, CONFIG.get('General', 'apiToken'), CONFIG.get('General', 'apiSecret'))
+        self.auth_client = AuthClient(CONFIG.get('General', 'apiToken'), CONFIG.get('General', 'apiSecret'), TOKEN_URL)
 
         self.stop_event = threading.Event()  # Event object for stopping NFC read loop
         self.device = self.find_event_device(self.settings["general"]["nfcReaderVendorIdDeviceId"])
@@ -55,13 +57,22 @@ class Washcard:
     def load_info(self):
         """Store the retrieved card info in the class."""
         info = self.get_info()
-        # Check if the info dictionary has an 'error' key
-        if not info or 'error' in info:
-            logging.error("Card info could not be loaded: %s", info.get("error", "Unknown error"))
+
+        # Ensure `info` is valid and contains necessary data
+        if not info or not isinstance(info, dict) or 'error' in info:
+            logging.error("Card info could not be loaded: %s", info.get("error", "Unknown error") if isinstance(info, dict) else "Invalid data structure")
             return False
+
+        # Convert to Munch (if needed) and log the data
         info = munchify(info)
-        logging.debug('=====INFO: =====')
-        logging.debug(info)
+        logging.debug("Card info processed successfully: %s", info)
+
+        # Ensure critical fields are present
+        if not info.carwash_id or not info.company_id:
+            logging.error("Critical card data missing: %s", info)
+            return False
+
+        # Populate object attributes
         self.carwash = munchify({
             'id': info.carwash_id,
             'name': info.carwash_name,
@@ -81,6 +92,8 @@ class Washcard:
         self.balance = info.balance
         self.id = info.id
         self.credit = info.credit
+
+        return True
 
     def get_info(self):
         """Retrieve card info from API."""
@@ -164,7 +177,7 @@ class Washcard:
                                 self.uid = nfcUid
                                 # Attempt to load card information
                                 if not self.load_info():
-                                    logging.error("Failed to process card: Card not found or loading failed.")
+                                    logging.error("Failed to process card. Card UID: %s", self.uid)
                                 try:
                                     callback()
                                 except Exception as e:

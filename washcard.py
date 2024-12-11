@@ -10,17 +10,16 @@ from auth_client import AuthClient  # Import AuthClient from the auth module
 # Configuration setup
 CONFIG = configparser.ConfigParser()
 CONFIG.read('config.ini')
-API_URL = 'https://api.washterminalpro.nl'
-API_PATH = '/dev' if CONFIG.get('General', 'testMode') == 'True' else '/v1'
+API_URL = f"https://api.washterminalpro.nl{'/dev' if CONFIG.get('General', 'testMode') == 'True' else '/v1'}"
 TOKEN_URL_SUBDOMAIN_SUFFIX = '-dev' if CONFIG.get('General', 'testMode') == 'True' else '/'
 TOKEN_URL = 'https://auth' + TOKEN_URL_SUBDOMAIN_SUFFIX + '.washterminalpro.nl/token'
 
 
 class Washcard:
     """Class to handle everything related to the wash cards."""
-    cardInfoUrl = API_URL + API_PATH + '/card/%s'
-    cardBalanceUrl = API_URL + API_PATH + '/card/%s/balance'
-    cardTransactionUrl = API_URL + API_PATH + '/transaction/start'
+    cardInfoUrl = API_URL + '/card/%s'
+    cardBalanceUrl = API_URL + '/card/%s/balance'
+    cardTransactionUrl = API_URL + '/transaction/start'
 
     def __init__(self, settings):
         self.settings = settings
@@ -33,7 +32,9 @@ class Washcard:
         logging.basicConfig(encoding='utf-8', level=int(self.settings["general"]["logLevel"]))
 
         # Initialize AuthClient for handling authorization and token refreshing
-        self.auth_client = AuthClient(CONFIG.get('General', 'apiToken'), CONFIG.get('General', 'apiSecret'), TOKEN_URL)
+        API_TOKEN = str(CONFIG.get('General', 'client_id'))
+        API_SECRET = str(CONFIG.get('General', 'client_secret'))
+        self.auth_client = AuthClient(API_TOKEN, API_SECRET, TOKEN_URL)
 
         self.stop_event = threading.Event()  # Event object for stopping NFC read loop
         self.device = self.find_event_device(self.settings["general"]["nfcReaderVendorIdDeviceId"])

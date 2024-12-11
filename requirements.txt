@@ -28,7 +28,6 @@ lockfile==0.12.2
 marshmallow==3.21.2
 msgpack==1.1.0
 munch==4.0.0
-mutapath==0.16.2
 ndeflib==0.3.3
 netifaces==0.11.0
 oauthlib==3.2.2

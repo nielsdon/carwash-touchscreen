@@ -46,19 +46,20 @@ os.environ['KIVY_NO_FILELOG'] = '1'  # eliminate file log
 # globals
 CONFIG = configparser.ConfigParser()
 CONFIG.read('config.ini')
-API_TOKEN = str(CONFIG.get('General', 'apiToken'))
-API_SECRET = str(CONFIG.get('General', 'apiSecret'))
+API_TOKEN = str(CONFIG.get('General', 'client_id'))
+API_SECRET = str(CONFIG.get('General', 'client_secret'))
 TEST_MODE = bool(CONFIG.get('General', 'testMode') == 'True')
+
 SETTINGS = {}
 pi = pigpio.pi()
 if not pi.connected:
     sys.exit()
 if TEST_MODE:
-    API_PATH = 'dev'
+    API_URL = "https://api.washterminalpro.nl/dev"
     os.environ['KIVY_NO_CONSOLELOG'] = '1'  # Enable console logging
     os.environ['KIVY_LOG_LEVEL'] = 'debug'  # Set log level to debug
 else:
-    API_PATH = 'v1'
+    API_URL = "https://api.washterminalpro.nl/v1"
     os.environ['KIVY_NO_CONSOLELOG'] = '0'  # Enable console logging
     os.environ['KIVY_LOG_LEVEL'] = 'error'  # Set log level to error
 
@@ -177,7 +178,7 @@ class Carwash(App):
 
     def load_settings(self):
         """Load initial carwash details using AuthClient for authentication."""
-        url = f'https://api.washterminalpro.nl/{API_PATH}/carwash'
+        url = f'{API_URL}/carwash'
         try:
             _, data = self.auth_client.make_authenticated_request(url)
         except Exception as e:

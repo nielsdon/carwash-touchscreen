@@ -131,7 +131,6 @@ class Washcard:
 
         url = self.cardTransactionUrl
         data = {
-            "carwash_id": self.settings["general"]["carwashId"],
             "card_id": self.id,
             "amount": amount,
             "description": description,
@@ -141,13 +140,15 @@ class Washcard:
 
         try:
             status_code, response = self.auth_client.make_authenticated_request(url, "POST", data)
-            # Check for a 404 status code to indicate the card was not found
-            if status_code != 200:
-                return {"error": "Error creating transaction", "status_code": status_code}
-            return response
+            return {"status_code": status_code, **response}
+
         except Exception as e:
-            logging.error(f"Unexpected Error: {e}")
-            return 3
+            logging.error(f"Washcard payment Error: {e}")
+            # Handle insufficient funds error specifically
+            if status_code == 462:
+                logging.error("Transaction failed: Insufficient funds")
+                return {"error": "Insufficient funds", "status_code": status_code}
+            return {"error": "Unexpected error", "details": str(e)}
 
     def stop_reading(self):
         """Stop the NFC reading loop."""

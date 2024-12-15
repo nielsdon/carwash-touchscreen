@@ -4,6 +4,17 @@ FROM arm64v8/python:3.9
 # Set working directory
 WORKDIR /app
 
+# Install locales and generate nl_NL.UTF-8
+RUN apt-get update && \
+    apt-get install -y locales && \
+    echo "nl_NL.UTF-8 UTF-8" >> /etc/locale.gen && \
+    locale-gen && \
+    update-locale LANG=nl_NL.UTF-8
+
+# Set environment variables for locale
+ENV LANG=nl_NL.UTF-8
+ENV LC_ALL=nl_NL.UTF-8
+
 RUN apt-get update && \
     apt-get install -y \
     libgl1-mesa-glx \
@@ -33,13 +44,6 @@ RUN apt-get update && \
     cmake \
     git && \
     rm -rf /var/lib/apt/lists/*
-
-# Install pigpio from source
-RUN git clone https://github.com/joan2937/pigpio.git /tmp/pigpio && \
-    cd /tmp/pigpio && \
-    make && \
-    make install && \
-    rm -rf /tmp/pigpio
     
 # Copy the application code
 COPY . /app
@@ -50,7 +54,5 @@ RUN pip install --upgrade pip
 # Install dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-RUN pigpiod
-
 # Command to run your Python application
-CMD ["python", "main.py"]
+CMD ["python", "-m", "unittest", "discover", "tests"]

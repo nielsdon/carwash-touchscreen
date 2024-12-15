@@ -86,19 +86,20 @@ class PaymentWashcard(Screen):
     def handle_payment_response(self, response):
         """Handles the payment response and displays the appropriate screen."""
         app = App.get_running_app()
+        logging.debug('Handling response: %s', response)
 
-        if response["statusCode"] == 200:
+        if response["status_code"] == 200:
             screen = app.sm.get_screen('payment_success')
             if 'balance' in response:
                 logging.debug('New balance: %s %s', locale.LC_MONETARY, locale.currency(float(response["balance"])))
                 screen.ids.lbl_balance_text.text = "Nieuw saldo:"
                 screen.ids.lbl_balance.text = locale.currency(float(response["balance"]))
             app.change_screen('payment_success')
-        elif response["statusCode"] == 462:
+        elif response["status_code"] == 462:
             screen = app.sm.get_screen('payment_washcard_insufficient_balance')
             screen.ids.lbl_balance.text = locale.currency(float(self.washcard.balance))
             app.change_screen('payment_washcard_insufficient_balance')
-        elif response["statusCode"] == 460:
+        elif response["status_code"] == 460:
             app.change_screen('payment_washcard_card_not_valid')
         else:
             app.change_screen('payment_failed')

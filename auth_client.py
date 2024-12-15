@@ -47,8 +47,11 @@ class AuthClient:
             # Perform the authenticated request
             response = self.oauth.request(method, url, json=data)
 
+            # Handle 200, 460, and 462 responses gracefully
+            if response.status_code not in [200, 460, 462]:
+                response.raise_for_status()  # Raise an error for 4xx/5xx responses
+
             # Handle the response
-            response.raise_for_status()  # Raise an error for 4xx/5xx responses
             return response.status_code, response.json()
         except requests.exceptions.RequestException as e:
             logging.error("Error making API request: %s", e)

@@ -52,8 +52,7 @@ TEST_MODE = bool(CONFIG.get('General', 'testMode') == 'True')
 
 SETTINGS = {}
 pi = pigpio.pi()
-if not pi.connected:
-    sys.exit()
+
 if TEST_MODE:
     API_URL = "https://api.washterminalpro.nl/dev"
     os.environ['KIVY_NO_CONSOLELOG'] = '1'  # Enable console logging
@@ -90,9 +89,9 @@ class Carwash(App):
     status_light = None
     carwash_name = ''
 
-    def __init__(self, **kwargs):
+    def __init__(self, SETTINGS=None, **kwargs):
         super(Carwash, self).__init__(**kwargs)
-        # Init globals
+        self.SETTINGS = SETTINGS or {}        # Init globals
         self.TEST_MODE = TEST_MODE
 
         # Get the IP address
@@ -105,7 +104,8 @@ class Carwash(App):
             token_url = 'https://auth.washterminalpro.nl/token'
 
         self.auth_client = AuthClient(API_TOKEN, API_SECRET, token_url)
-        self.load_settings()
+        if self.SETTINGS == {}:
+            self.load_settings()
 
         # initialize trackers
         self.init_trackers()
@@ -437,3 +437,9 @@ class Carwash(App):
             self.change_screen("program_selection_high")
             return
         self.change_screen("program_selection")
+
+
+if __name__ == '__main__':
+    # Only exit when the script is run directly, not when imported
+    print("Running carwash.py directly")
+    sys.exit()

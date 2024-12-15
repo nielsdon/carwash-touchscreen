@@ -1,0 +1,10 @@
+services:
+  carwash-touchscreen-app:
+    build: .
+    container_name: carwash-touchscreen-container
+    volumes:
+      - .:/app
+    command: python -m unittest discover tests
+    privileged: true                    # Allow access to hardware-level resources
+    environment:
+      - DISPLAY=${DISPLAY}              # Pass the DISPLAY environment variable if needed

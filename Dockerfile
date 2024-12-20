@@ -40,6 +40,21 @@ RUN apt-get update && \
     libswscale-dev \
     libswresample-dev \
     libpostproc-dev \
+    libgl1-mesa-glx \
+    libgles2-mesa \
+    libegl1-mesa \
+    libx11-6 \
+    libxext6 \
+    libxrender1 \
+    libxi6 \
+    libxrandr2 \
+    libxcursor1 \
+    libxfixes3 \
+    libxinerama1 \
+    libxxf86vm1 \
+    libsdl2-dev \
+    x11-xserver-utils \
+    mesa-utils && \
     build-essential \
     cmake \
     git && \
@@ -56,6 +71,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Expose GPIO ports and pigpiod port
 EXPOSE 8888
+
+# Set environment variables for display
+ENV DISPLAY=:0
 
 # Run the pigpio daemon in the background and start the app
 CMD ["python3", "main.py"]

@@ -14,23 +14,17 @@ RUN apt-get update && \
 ENV LANG=nl_NL.UTF-8
 ENV LC_ALL=nl_NL.UTF-8
 
-# Install GPIO libraries
-RUN apt-get update && apt-get install -y \
-    python3-rpi.gpio \
-    pigpio \
-    python3-pigpio \
-    && rm -rf /var/lib/apt/lists/*
-
 # install graphical packages
 RUN apt-get update && \
     apt-get install -y \
+    pigpio \
+    python3-pigpio \
     libgl1-mesa-glx \
     libgles2-mesa \
     libegl1-mesa \
     libgl1-mesa-dev \
     libmtdev1 \
     python3-dev \
-    python3-rpi.gpio \
     python3-pip \
     bc \
     xclip \

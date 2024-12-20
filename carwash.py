@@ -1,7 +1,6 @@
 """Carwash class"""
 import sys
 import os
-import configparser
 import locale
 import logging
 import time
@@ -19,6 +18,7 @@ from auth_client import AuthClient
 from google_analytics import GoogleAnalytics
 from telegraf_logger import TelegrafLogger
 from state_tracker import StateTracker
+from dotenv import load_dotenv
 
 from screens.paymentFailed import PaymentFailed
 from screens.error import Error
@@ -43,12 +43,13 @@ from screens.upgradeWashcardPaymentSuccess import UpgradeWashcardPaymentSuccess
 from screens.upgradeWashcardReadCard import UpgradeWashcardReadCard
 
 os.environ['KIVY_NO_FILELOG'] = '1'  # eliminate file log
-# globals
-CONFIG = configparser.ConfigParser()
-CONFIG.read('config.ini')
-API_TOKEN = str(CONFIG.get('General', 'client_id'))
-API_SECRET = str(CONFIG.get('General', 'client_secret'))
-TEST_MODE = bool(CONFIG.get('General', 'testMode') == 'True')
+
+# Load environment variables from .env file
+load_dotenv()
+
+API_TOKEN = os.getenv("CLIENT_ID")
+API_SECRET = os.getenv("CLIENT_SECRET")
+TEST_MODE = bool(os.getenv("TEST_MODE") == '1')
 
 SETTINGS = {}
 # Connect to pigpiod on the host
@@ -103,7 +104,7 @@ class Carwash(App):
         self.ip_address = self.get_ip_address()
 
         # Initialize AuthClient for managing authentication
-        if TEST_MODE:
+        if self.TEST_MODE:
             token_url = 'https://auth-dev.washterminalpro.nl/token'
         else:
             token_url = 'https://auth.washterminalpro.nl/token'
@@ -146,7 +147,7 @@ class Carwash(App):
         if self.SETTINGS["general"]["programSelectionText"]:
             screen.ids.welcome_text.text = self.SETTINGS["general"]["programSelectionText"]
             screenHigh.ids.welcome_text.text = self.SETTINGS["general"]["programSelectionText"]
-        if TEST_MODE:
+        if self.TEST_MODE:
             screen.ids.test_label.text = "TEST - " + self.ip_address
             screenHigh.ids.test_label.text = "TEST - " + self.ip_address
         # start operation
@@ -207,17 +208,13 @@ class Carwash(App):
 
     def init_trackers(self):
         # Initialize the Google Analytics Logger
-        if 'measurement_id' in CONFIG['GA4']:
-            measurement_id = CONFIG['GA4']['measurement_id']
-        if CONFIG.get('General', 'testMode') == 'True':
-            if 'measurement_id_dev' in CONFIG['GA4']:
-                measurement_id = CONFIG['GA4']['measurement_id_dev']
+        if TEST_MODE:
+            measurement_id = os.getenv('GA4_MEASUREMENT_ID_DEV')
         else:
-            if 'measurement_id_prod' in CONFIG['GA4']:
-                measurement_id = CONFIG['GA4']['measurement_id_prod']
+            measurement_id = os.getenv('GA4_MEASUREMENT_ID_PROD')
 
-        api_secret = CONFIG['GA4']['api_secret']
-        client_id = CONFIG['GA4']['client_id']
+        api_secret = os.getenv('GA4_API')
+        client_id = os.getenv('CLIENT_ID')
         ga_logger = GoogleAnalytics(measurement_id, api_secret, client_id)
 
         # Initialize the Telegraf Logger

@@ -12,7 +12,8 @@ ENV LANG=nl_NL.UTF-8
 ENV LC_ALL=nl_NL.UTF-8
 
 ENV DEBIAN_FRONTEND=noninteractive
-# install graphical packages
+
+# Install graphical packages
 RUN apt-get update && \
     apt-get install -y \
     python3-pigpio \
@@ -49,5 +50,5 @@ ENV KIVY_BCM_DISPMANX_ID=2
 ENV KIVY_GL_BACKEND=gl
 ENV DISPLAY=:0
 
-# Run the pigpio daemon in the background and start the app
+# Run the application
 CMD ["python3", "main.py"]

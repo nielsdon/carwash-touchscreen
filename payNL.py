@@ -1,12 +1,13 @@
 """An SDK to communicate with Pay.nl API"""
-import configparser
 import logging
 import json
 import requests
+import os
 from requests.auth import HTTPBasicAuth
+from dotenv import load_dotenv
 
-CONFIG = configparser.ConfigParser()
-CONFIG.read('config.ini')
+# Load environment variables from .env file
+load_dotenv()
 
 
 class PayNL():
@@ -16,7 +17,7 @@ class PayNL():
         self.createTransactionUrl = 'https://rest.pay.nl/v2/transactions'
         self.cancelTransactionUrl = ''
         self.settings = settings
-        if CONFIG.get('General', 'testMode') == 'True':
+        if os.getenv('TEST_MODE') == '1':
             logging.basicConfig(encoding='utf-8', level=10)
         else:
             logging.basicConfig(encoding='utf-8', level=50)
@@ -53,7 +54,7 @@ class PayNL():
         url = self.createTransactionUrl
         # TEST MODE
         try:
-            if CONFIG.get('General', 'testMode') == 'True':
+            if os.getenv('TEST_MODE') == '1':
                 logging.debug('Payment test mode is ON')
                 amount = 0.01
         except Exception as err:

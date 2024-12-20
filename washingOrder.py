@@ -1,10 +1,7 @@
 """A Helper class to structure the washing orders"""
-import configparser
 import logging
 from datetime import datetime, time
 
-CONFIG = configparser.ConfigParser()
-CONFIG.read('config.ini')
 SETTINGS = {}
 
 

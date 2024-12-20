@@ -16,6 +16,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && \
     apt-get install -y \
     python3-pigpio \
+    libterm-readline-perl-perl \
     libgl1-mesa-glx \
     libgles2-mesa \
     libegl1-mesa \

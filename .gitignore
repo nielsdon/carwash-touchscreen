@@ -3,3 +3,4 @@ env
 logo.png
 pyarmor.error.log
 __pycache__
+.vscode

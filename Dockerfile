@@ -11,6 +11,7 @@ RUN apt-get update && \
 ENV LANG=nl_NL.UTF-8
 ENV LC_ALL=nl_NL.UTF-8
 
+ENV DEBIAN_FRONTEND=noninteractive
 # install graphical packages
 RUN apt-get update && \
     apt-get install -y \

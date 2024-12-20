@@ -17,7 +17,6 @@ ENV LC_ALL=nl_NL.UTF-8
 # install graphical packages
 RUN apt-get update && \
     apt-get install -y \
-    pigpio \
     python3-pigpio \
     libgl1-mesa-glx \
     libgles2-mesa \

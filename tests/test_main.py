@@ -24,7 +24,7 @@ class TestMain(unittest.TestCase):
                 "BIT8LED": 19
             }
         }
-        
+
         carwash = main.Carwash(mock_settings)
         # Mock the screen manager
         carwash.sm = MagicMock()
@@ -37,7 +37,7 @@ class TestMain(unittest.TestCase):
     @patch('carwash.pigpio.pi')
     def test_signal_handler(self, mock_pi, mock_exit):
         mock_instance = mock_pi.return_value
-        
+
         # Define mock settings with gpio configuration
         mock_settings = {
             "gpio": {

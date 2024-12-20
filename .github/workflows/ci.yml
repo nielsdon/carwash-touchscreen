@@ -21,11 +21,11 @@ jobs:
 
       # Step 3: Build the Docker image
       - name: Build Docker Image
-        run: docker-compose build
+        run: docker compose build
 
       # Step 4: Run the tests in the Docker container
       - name: Run Unit Tests
-        run: docker-compose run --rm carwash-touchscreen-app python -m unittest discover tests
+        run: docker compose run --rm carwash-touchscreen-app python -m unittest discover tests
 
       # Step 5: Optional - Upload test reports (if you have any)
       - name: Upload Test Reports

@@ -1,6 +1,6 @@
 import unittest
 from unittest.mock import patch, MagicMock
-import sys
+# import sys
 
 # Mock pigpio before importing carwash
 # Mock Kivy components before importing carwash
@@ -150,7 +150,7 @@ class TestCarwash(unittest.TestCase):
         carwash.run()
 
         # Assertions to check if the correct methods were called with the correct arguments
-        # mock_instance.set_mode.assert_any_call(17, mock_instance.OUTPUT)
+        mock_instance.set_mode.assert_any_call(17, mock_instance.OUTPUT)
         # mock_instance.set_mode.assert_any_call(18, mock_instance.OUTPUT)
         # mock_instance.set_mode.assert_any_call(23, mock_instance.INPUT)
         # mock_instance.set_pull_up_down.assert_any_call(23, mock_instance.PUD_DOWN)

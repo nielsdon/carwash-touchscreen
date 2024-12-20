@@ -1,5 +1,4 @@
-# Use an ARM-based image
-FROM arm64v8/python:3.9
+FROM python:3.11-slim
 
 # Set working directory
 WORKDIR /app
@@ -15,6 +14,14 @@ RUN apt-get update && \
 ENV LANG=nl_NL.UTF-8
 ENV LC_ALL=nl_NL.UTF-8
 
+# Install GPIO libraries
+RUN apt-get update && apt-get install -y \
+    python3-rpi.gpio \
+    pigpio \
+    python3-pigpio \
+    && rm -rf /var/lib/apt/lists/*
+
+# install graphical packages
 RUN apt-get update && \
     apt-get install -y \
     libgl1-mesa-glx \
@@ -46,7 +53,7 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
     
 # Copy the application code
-COPY . /app
+COPY . .
 
 # update pip
 RUN pip install --upgrade pip
@@ -54,5 +61,8 @@ RUN pip install --upgrade pip
 # Install dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Command to run your Python application
-CMD ["python", "-m", "unittest", "discover", "tests"]
+# Expose GPIO ports and pigpiod port
+EXPOSE 8888
+
+# Run the pigpio daemon in the background and start the app
+CMD ["python3", "main.py"]

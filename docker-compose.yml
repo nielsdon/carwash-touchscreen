@@ -1,10 +1,16 @@
+version: '3.8'
+
 services:
-  carwash-touchscreen-app:
+  gpio-app:
     build: .
-    container_name: carwash-touchscreen-container
-    volumes:
-      - .:/app
-    command: python -m unittest discover tests
-    privileged: true                    # Allow access to hardware-level resources
+    container_name: carwash-app
+    ports:
+      - "8888:8888"  # Map the pigpiod port
+    devices:
+      - "/dev/gpiomem:/dev/gpiomem"  # Access to GPIO memory
+    cap_add:
+      - SYS_RAWIO  # Allows direct GPIO access
     environment:
-      - DISPLAY=${DISPLAY}              # Pass the DISPLAY environment variable if needed
+      - PIGPIO_ADDR=host.docker.internal  # Connect to host pigpiod
+      - PIGPIO_PORT=8888
+    restart: unless-stopped

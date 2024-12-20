@@ -51,7 +51,12 @@ API_SECRET = str(CONFIG.get('General', 'client_secret'))
 TEST_MODE = bool(CONFIG.get('General', 'testMode') == 'True')
 
 SETTINGS = {}
-pi = pigpio.pi()
+# Connect to pigpiod on the host
+pi = pigpio.pi('host.docker.internal', 8888)
+if not pi.connected:
+    print("Failed to connect to pigpiod")
+else:
+    print("Connected to pigpiod")
 
 if TEST_MODE:
     API_URL = "https://api.washterminalpro.nl/dev"

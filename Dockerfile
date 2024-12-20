@@ -25,7 +25,7 @@ RUN apt-get update && \
     python3-dev \
     python3-pip \
     bc \
-    mesa-utils && \
+    mesa-utils \
     git && \
     rm -rf /var/lib/apt/lists/*
     

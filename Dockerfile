@@ -49,6 +49,8 @@ EXPOSE 8888
 ENV KIVY_BCM_DISPMANX_ID=2
 ENV KIVY_GL_BACKEND=gl
 ENV DISPLAY=:0
+ENV PIGPIO_ADDR=localhost
+ENV PIGPIO_PORT=8888
 
 # Run the application
 CMD ["python3", "main.py"]

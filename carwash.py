@@ -52,8 +52,14 @@ API_SECRET = os.getenv("CLIENT_SECRET")
 TEST_MODE = bool(os.getenv("TEST_MODE") == '1')
 
 SETTINGS = {}
-# Connect to pigpiod on the host
-pi = pigpio.pi('host.docker.internal', 8888)
+
+# Get environment variables
+pigpio_addr = os.getenv('PIGPIO_ADDR', 'localhost')  # Default to 'localhost' if the env var is not set
+pigpio_port = int(os.getenv('PIGPIO_PORT', 8888))    # Default to 8888 if the env var is not set
+
+# Connect to pigpiod
+pi = pigpio.pi(pigpio_addr, pigpio_port)
+
 if not pi.connected:
     print("Failed to connect to pigpiod")
 else:

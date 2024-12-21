@@ -48,7 +48,7 @@ class Washcard:
         logging.debug("Finding device %s", vendor_product_id)
         try:
             # Run the shell script with the vendor:product ID as argument
-            result = subprocess.run(['./get_hid_device.sh', vendor_product_id],
+            result = subprocess.run(['. ./get_hid_device.sh', vendor_product_id],
                                     capture_output=True, text=True, check=True)
             eventDevice = result.stdout.strip()
             logging.debug("NFC Device found: %s", eventDevice)

@@ -1,14 +1,18 @@
 services:
-  gpio-app:
-    build: .
-    container_name: carwash-app
-    ports:
-      - "8888:8888"  # Map the pigpiod port
-    devices:
+  carwash-touchscreen:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      platforms: 
+        - linux/arm64  # Ensure ARM64 architecture
+    container_name: carwash-touchscreen
+    network_mode: "host"  # Use host network mode
+    image: docker.io/library/carwash-touchscreen  # Specify the desired image name
+    volumes:
       - "/dev/gpiomem:/dev/gpiomem"  # Access to GPIO memory
+      - "/home/pi/.env:/app/.env"
+    devices:
+      - "/dev/mem:/dev/mem"
     cap_add:
       - SYS_RAWIO  # Allows direct GPIO access
-    environment:
-      - PIGPIO_ADDR=host.docker.internal  # Connect to host pigpiod
-      - PIGPIO_PORT=8888
-    restart: unless-stopped
+    restart: always

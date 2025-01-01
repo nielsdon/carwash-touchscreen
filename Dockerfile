@@ -32,12 +32,12 @@ RUN apt-get update && apt-get install -y curl && \
     curl -sS https://bootstrap.pypa.io/get-pip.py | python3 && \
     pip install --upgrade pip setuptools wheel
 
-# set executable permissions
-RUN chmod a+x *.sh
-
 # Copy the application code
 COPY . /app
 WORKDIR /app
+
+# set executable permissions
+RUN chmod a+x *.sh
 
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt

@@ -19,6 +19,15 @@ RUN apt-get update && \
     gcc \
     build-essential \
     udev \
+    libterm-readline-perl-perl \
+    libgl1-mesa-glx \
+    libgles2-mesa \
+    libegl1-mesa \
+    libgl1-mesa-dev \
+    libmtdev1 \
+    libinput10 \
+    libevdev2 \
+    mesa-utils \
     libinput-dev \
     libudev-dev \
     python3-pigpio \
@@ -53,6 +62,8 @@ ENV KIVY_WINDOW=sdl2
 ENV DISPLAY=:0
 ENV PIGPIO_ADDR=localhost
 ENV PIGPIO_PORT=8888
+ENV KIVY_BCM_DISPMANX_ID=2
+ENV KIVY_GL_BACKEND=pillow
 #ENV KIVY_GL_BACKEND=pillow
 #ENV KIVY_GL_BACKEND=gl
 

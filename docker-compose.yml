@@ -15,4 +15,3 @@ services:
       - "/dev/mem:/dev/mem"
     cap_add:
       - SYS_RAWIO  # Allows direct GPIO access
-    restart: always

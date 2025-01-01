@@ -3,6 +3,7 @@ env
 logo.png
 pyarmor.error.log
 __pycache__
-.vscode
+.vscode/
 .gitignore
 .env
+docker-compose-host.yml

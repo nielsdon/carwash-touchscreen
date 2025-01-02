@@ -1,9 +1,0 @@
-config.ini
-env
-logo.png
-pyarmor.error.log
-__pycache__
-.vscode/
-.gitignore
-.env
-docker-compose-host.yml

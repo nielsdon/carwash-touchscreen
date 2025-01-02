@@ -47,9 +47,6 @@ RUN apt-get update && apt-get install -y curl && \
 COPY . /app
 WORKDIR /app
 
-# set executable permissions
-RUN chmod a+x *.sh
-
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 

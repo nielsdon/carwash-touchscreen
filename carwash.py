@@ -89,10 +89,11 @@ class Carwash(App):
     jwt_token = ''
     TEST_MODE = True
     SETTINGS = {}
-    buttonBackgroundColor = [1, 1, 1, 1]
-    buttonTextColor = [0, 0, 0, 1]
-    textColor = [0, 0, 0, 1]
-    backgroundColor = [1, 1, 1, 1]
+    buttonBackgroundColor = "#9BC6B9"
+    backgroundColor = "#E3EEEB"
+    buttonTextColor = "#FFFFFF"
+    textColor = "#000000"
+    backgroundColor = "#9BC6B9"
     supportPhone = ''
     in_position = 0
     error = 1
@@ -150,7 +151,7 @@ class Carwash(App):
         # show the test label with IP address in test mode
         screen = self.sm.get_screen("program_selection")
         screenHigh = self.sm.get_screen("program_selection_high")
-        if self.SETTINGS["general"]["programSelectionText"]:
+        if "programSelectionText" in self.SETTINGS["general"]:
             screen.ids.welcome_text.text = self.SETTINGS["general"]["programSelectionText"]
             screenHigh.ids.welcome_text.text = self.SETTINGS["general"]["programSelectionText"]
         if self.TEST_MODE:
@@ -204,11 +205,15 @@ class Carwash(App):
 
         if "general" in self.SETTINGS:
             self.SETTINGS["general"]["carwashId"] = self.carwash_id
-            self.buttonBackgroundColor = self.SETTINGS["general"]["buttonBackgroundColor"]
-            self.buttonTextColor = self.SETTINGS["general"]["buttonTextColor"]
-            self.backgroundColor = self.SETTINGS["general"]["backgroundColor"]
-            Window.clearcolor = self.SETTINGS["general"]["backgroundColor"]
-            self.textColor = self.SETTINGS["general"]["textColor"]
+            if "buttonBackgroundColor" in self.SETTINGS["general"]:
+                self.buttonBackgroundColor = self.SETTINGS["general"]["buttonBackgroundColor"]
+            if "buttonTextColor" in self.SETTINGS["general"]:
+                self.buttonTextColor = self.SETTINGS["general"]["buttonTextColor"]
+            if "backgroundColor" in self.SETTINGS["general"]:
+                self.backgroundColor = self.SETTINGS["general"]["backgroundColor"]
+            if "textColor" in self.SETTINGS["general"]:
+                self.textColor = self.SETTINGS["general"]["textColor"]
+            Window.clearcolor = self.backgroundColor
             self.supportPhone = self.SETTINGS["general"]["supportPhone"]
             Logger.setLevel(int(self.SETTINGS["general"]["logLevel"]))
             logging.basicConfig(encoding='utf-8', level=int(self.SETTINGS["general"]["logLevel"]))

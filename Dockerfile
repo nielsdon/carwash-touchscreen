@@ -63,19 +63,7 @@ ENV DISPLAY=:0
 ENV PIGPIO_ADDR=localhost
 ENV PIGPIO_PORT=8888
 ENV KIVY_BCM_DISPMANX_ID=2
-#ENV KIVY_GL_BACKEND=pillow
-#ENV KIVY_GL_BACKEND=pillow
-#ENV KIVY_GL_BACKEND=gl
-
-#export KIVY_IMAGE=pil
-#export KIVY_WINDOW=egl_rpi
-#export DISPLAY=:0
-#export PIGPIO_ADDR=localhost
-#export PIGPIO_PORT=8888
-#export KIVY_GL_BACKEND=gl
 ENV XDG_RUNTIME_DIR=/tmp/runtime-dir
 RUN mkdir -p /tmp/runtime-dir && chmod 700 /tmp/runtime-dir
 
-# COPY entrypoint.sh /app/entrypoint.sh
-# RUN chmod +x /app/entrypoint.sh
-# ENTRYPOINT ["/app/entrypoint.sh"]
+CMD ["python", "main.py"]

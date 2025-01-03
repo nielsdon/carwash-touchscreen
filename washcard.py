@@ -146,10 +146,10 @@ class Washcard:
 
         except Exception as e:
             logging.error(f"Washcard payment Error: {e}")
-            
+
             # Ensure `status_code` has a default value
             status_code = getattr(e, 'status_code', None)
-            
+
             # Handle insufficient funds error specifically
             if status_code == 462:
                 logging.error("Transaction failed: Insufficient funds")

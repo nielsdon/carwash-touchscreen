@@ -13,8 +13,8 @@ load_dotenv()
 
 # Configuration setup
 API_URL = f"https://api.washterminalpro.nl{'/dev' if os.getenv('TEST_MODE') == '1' else '/v1'}"
-TOKEN_URL_SUBDOMAIN_SUFFIX = '-dev' if os.getenv('TEST_MODE') == '1' else '/'
-TOKEN_URL = 'https://auth' + TOKEN_URL_SUBDOMAIN_SUFFIX + '.washterminalpro.nl/token'
+TOKEN_URL_SUBDOMAIN_SUFFIX = '-dev' if os.getenv('TEST_MODE') == '1' else ''
+TOKEN_URL = f"https://auth{TOKEN_URL_SUBDOMAIN_SUFFIX}.washterminalpro.nl/token"
 
 
 class Washcard:

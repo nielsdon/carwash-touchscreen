@@ -5,7 +5,7 @@ from kivy.clock import Clock
 from kivy.uix.screenmanager import Screen
 from kivy.app import App
 from payNL import PayNL
-from washcard import Washcard
+
 
 class UpgradeWashcardPayment(Screen):
     transaction_status = ''
@@ -13,7 +13,7 @@ class UpgradeWashcardPayment(Screen):
     transaction_id = 0
     cancel_transaction = threading.Event()
     settings = {}
-    
+
     def on_enter(self, *args, **kwargs):
         logging.debug("=== Upgrade washcard - payment ===")
         app = App.get_running_app()
@@ -46,7 +46,7 @@ class UpgradeWashcardPayment(Screen):
         # timeout is reached, status is no longer PENDING or payment is cancelled
         if self.transaction_status == 'PAID':
             logging.debug('betaling gelukt!')
-            app.changeScreen('upgrade_washcard_payment_success')
+            app.change_screen('upgrade_washcard_payment_success')
         elif self.cancel_transaction.is_set():
             logging.debug('transaction cancelled')
             self.cancel_transaction.clear()
@@ -54,8 +54,8 @@ class UpgradeWashcardPayment(Screen):
             app.show_start_screen()
         else:
             logging.debug('some payment error')
-            #self.pay.cancelTransaction(self.transaction_id)
-            Clock.schedule_once(lambda dt: app.changeScreen('upgrade_washcard_payment_failed'))
+            # self.pay.cancelTransaction(self.transaction_id)
+            Clock.schedule_once(lambda dt: app.change_screen('upgrade_washcard_payment_failed'))
 
     def cancel(self, *args, **kwargs):
         """ cancel button is pressed """

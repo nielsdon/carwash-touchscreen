@@ -3,6 +3,7 @@ from kivy.app import App
 import logging
 import time
 
+
 class PaymentSuccess(Screen):
     def on_enter(self, *args, **kwargs):
         logging.debug("=== Payment success ===")

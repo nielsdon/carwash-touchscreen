@@ -3,6 +3,7 @@ from kivy.app import App
 import logging
 import time
 
+
 class UpgradeWashcardCredit(Screen):
     def on_enter(self, *args, **kwargs):
         logging.debug("=== Attempt topup credit card ===")

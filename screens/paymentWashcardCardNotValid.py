@@ -3,6 +3,7 @@ from kivy.app import App
 import logging
 import time
 
+
 class PaymentWashcardCardNotValid(Screen):
     def on_enter(self, *args, **kwargs):
         logging.debug("=== Washcard not valid ===")

@@ -1,19 +1,17 @@
+#:import C kivy.utils.get_color_from_hex
 #:set default_font_size "42sp"
 #:set heading_font_size "60sp"
-#:set error_color 1,0,0,1
+#:set error_color "#FF0000"
+
+<Widget>:
+  font_name: 'DefaultFont'
 
 <BorderedButton@Button>:
-  background_color: app.buttonBackgroundColor
+  background_color: C(app.buttonBackgroundColor)
   background_normal: ''  # Disable the default background image
   height: 200
   font_size: default_font_size
-  color: app.buttonTextColor
-  canvas.before:
-    Color:
-      rgba: 1, 1, 1, 1  # Border color
-    Line:
-      width: 3  # Border thickness
-      rectangle: self.x, self.y, self.width, self.height
+  color: C(app.buttonTextColor)
 
 <FullWidthImage@Image>:
   size_hint_y: None
@@ -25,14 +23,15 @@
 
 <BaseLayout@BoxLayout>:
   canvas.before:
-    Color:
-      rgba: 1, 1, 1, 1
+    Color: 
+      rgba: C(app.backgroundColor)
     Rectangle:
       pos: self.pos
       size: self.size
   orientation: 'vertical'
+  spacing: 5
   FullWidthImage:
-    source: 'logo.png'
+    source: 'images/logo.png'
 
 <ProgramSelection>:
   BaseLayout:
@@ -41,15 +40,16 @@
       id: test_label
       text: "TEST"
       font_size: '20sp'
-      color: error_color
+      color: C(error_color)
       size_hint: None, None
       size: self.texture_size
       pos_hint: {'x': 0, 'top': 1.0}  # Position top-left corner
       opacity: 1 if app.TEST_MODE else 0  # Conditional visibility
     Label:
+      id: welcome_text
       text: "Spiegels ingeklapt?\nAntenne verwijderd?"
       font_size: heading_font_size
-      color: app.textColor
+      color: C(app.textColor)
 
 <ProgramSelectionHigh>:
   BaseLayout:
@@ -58,30 +58,55 @@
       id: test_label
       text: "TEST"
       font_size: '20sp'
-      color: error_color
+      color: C(error_color)
       size_hint: None, None
       size: self.texture_size
       pos_hint: {'x': 0, 'top': 1.0}  # Position top-left corner
       opacity: 1 if app.TEST_MODE else 0  # Conditional visibility
     Label:
+      id: welcome_text
       text: "Spiegels ingeklapt?\nAntenne verwijderd?"
       font_size: default_font_size
-      color: app.textColor
+      color: C(app.textColor)
 
 <PaymentMethod>:
   BaseLayout:
     Label:
       text: "Kies betaalmethode"
       font_size: heading_font_size
-      color: app.textColor
-    BorderedButton:
-      text: "PIN"
+      color: C(app.textColor)
+    Button:
       on_release:
         root.selectPin()
-    BorderedButton:
-      text: "Waspas"
+      background_normal: ''  # Disable the normal background
+      background_down: ''    # Disable the down state background
+      background_color: 1, 1, 1, 0  # Fully transparent background
+      BoxLayout:
+        pos: self.parent.pos
+        size: self.parent.size
+        # orientation: 'lr-tb'
+        spacing: 10
+        padding: 20
+        Image:
+          source: 'images/pin.png'
+          size_hint_y: None
+          height: self.parent.height - 40
+    Button:
       on_release:
         root.selectWashcard()
+      background_normal: ''  # Disable the normal background
+      background_down: ''    # Disable the down state background
+      background_color: 1, 1, 1, 0  # Fully transparent background
+      BoxLayout:
+        pos: self.parent.pos
+        size: self.parent.size
+        # orientation: 'lr-tb'
+        spacing: 10
+        padding: 20
+        Image:
+          source: 'images/washcard.png'
+          size_hint_y: None
+          height: self.parent.height - 40
     BorderedButton:
       text: "Annuleren"
       on_release:
@@ -91,7 +116,7 @@
     Label:
       text: "Voltooi betaling\nop PIN terminal"
       font_size: heading_font_size
-      color: app.textColor
+      color: C(app.textColor)
     BorderedButton:
       text: "Annuleren"
       on_release:
@@ -102,7 +127,7 @@
     Label:
       text: "Houd waspas voor\nde lezer"
       font_size: heading_font_size
-      color: app.textColor
+      color: C(app.textColor)
     BorderedButton:
       text: "Annuleren"
       on_release:
@@ -113,7 +138,7 @@
     Label:
       text: "Houd de waspas\nvoor de lezer"
       font_size: heading_font_size
-      color: app.textColor
+      color: C(app.textColor)
     BorderedButton:
       text: "Annuleren"
       on_release:
@@ -131,7 +156,7 @@
         text_size: self.size
         font_size: heading_font_size
         padding: [0,0,20,0]
-        color: app.textColor
+        color: C(app.textColor)
 
       Label:
         id: lbl_balance
@@ -140,12 +165,12 @@
         text: '----'
         font_size: heading_font_size
         padding: [20,0,0,0]
-        color: app.textColor
+        color: C(app.textColor)
 
     Label:
       text: "Kies bedrag"
       font_size: heading_font_size
-      color: app.textColor
+      color: C(app.textColor)
 
     BoxLayout:
       orientation: 'horizontal'
@@ -185,7 +210,7 @@
     Label:
       text: "Voltooi betaling\nop PIN terminal"
       font_size: heading_font_size
-      color: app.textColor
+      color: C(app.textColor)
     BorderedButton:
       text: "Annuleren"
       on_release:
@@ -194,134 +219,145 @@
 <UpgradeWashcardPaymentFailed>:
   BaseLayout:
     Image:
-      source: 'error.png'
+      source: 'images/error.png'
       size: self.texture_size
     Label:
       text: "Betaling niet gelukt!"
       font_size: heading_font_size
-      color: error_color
+      color: C(error_color)
       
 <UpgradeWashcardPaymentSuccess>:
   BaseLayout:
     Image:
-      source: 'success.png'
+      source: 'images/success.png'
       size: self.texture_size
     Label:
       text: "Opwaarderen gelukt!"
       font_size: heading_font_size
-      color: app.textColor
+      color: C(app.textColor)
     Label:
       text: "Terug naar programmaselectie"
       font_size: default_font_size
-      color: app.textColor
+      color: C(app.textColor)
       
 <PaymentWashcardCardNotValid>:
   BaseLayout:
     Image:
-      source: 'error.png'
+      source: 'images/error.png'
       size: self.texture_size
     Label:
       text: "Waspas niet geldig"
       font_size: heading_font_size
-      color: error_color
+      color: C(error_color)
 
 <UpgradeWashcardCredit>:
   BaseLayout:
     Image:
-      source: 'error.png'
+      source: 'images/error.png'
       size: self.texture_size
     Label:
       text: "Credit waspassen kun\nje niet opwaarderen"
       font_size: heading_font_size
-      color: error_color
+      color: C(error_color)
       
 <PaymentWashcardWrongCarwash>:
   BaseLayout:
     Image:
-      source: 'error.png'
+      source: 'images/error.png'
       size: self.texture_size
     Label:
       text: "Waspas alleen geldig bij:"
       font_size: heading_font_size
-      color: error_color
+      color: C(error_color)
     Label:
       id: lbl_carwash
       text: "----"
       font_size: heading_font_size
-      color: app.textColor
+      color: C(app.textColor)
 
 <PaymentWashcardCardNotFound>:
   BaseLayout:
     Image:
-      source: 'error.png'
+      source: 'images/error.png'
       size: self.texture_size
     Label:
       text: "Geen waspas gevonden"
       font_size: heading_font_size
-      color: error_color
+      color: C(error_color)
 
 <PaymentWashcardInsufficientBalance>:
   BaseLayout:
     Image:
-      source: 'error.png'
+      source: 'images/error.png'
       size: self.texture_size
     Label:
       text: "Onvoldoende saldo"
       font_size: heading_font_size
-      color: error_color
+      color: C(error_color)
     Label:
       id: lbl_balance
       text: "---"
       font_size: heading_font_size
-      color: error_color
+      color: C(error_color)
 
 <PaymentFailed>:
   BaseLayout:
     Image:
-      source: 'error.png'
+      source: 'images/error.png'
       size: self.texture_size
     Label:
       text: "Betaling niet gelukt!"
       font_size: heading_font_size
-      color: error_color
+      color: C(error_color)
       
 <PaymentSuccess>:
   BaseLayout:
     Image:
-      source: 'success.png'
+      source: 'images/success.png'
       size: self.texture_size
     Label:
       text: "Betaling gelukt!"
       font_size: heading_font_size
-      color: app.textColor
+      color: C(app.textColor)
     Label:
       text: "Machine wordt gestart"
       font_size: default_font_size
-      color: app.textColor
+      color: C(app.textColor)
     Label:
       text: "NIET in auto stappen a.u.b."
       font_size: heading_font_size
-      color: error_color
+      color: C(error_color)
     Label:
       id: lbl_balance_text
       text: ""
       font_size: heading_font_size
-      color: app.textColor
+      color: C(app.textColor)
     Label:
       id: lbl_balance
       text: ""
       font_size: heading_font_size
-      color: app.textColor
+      color: C(app.textColor)
 
 <InProgress>:
   BaseLayout:
     Label:
       text: "Bezig met wassen"
       font_size: heading_font_size
-      color: app.textColor
+      color: C(app.textColor)
     FullWidthImage:
-      source: 'progress.zip'
-      anim_delay: 0.05
+      source: 'images/progress.zip'
+      anim_delay: 0.04
+
+<Finished>:
+  BaseLayout:
+    Label:
+      text: "Wassen klaar!\nU kunt uitrijden"
+      font_size: heading_font_size
+      color: C(app.textColor)
+
+    FullWidthImage:
+      source: 'images/washing_done.zip'
+      anim_delay: 0.13
 
 <MoveVehicle>:
   BaseLayout:
@@ -329,16 +365,16 @@
       width: self.parent.width
       text: ""
       font_size: default_font_size
-      color: app.textColor
+      color: C(app.textColor)
 
     Image:
-      source: 'arrow_up.png'
+      source: 'images/arrow_up.png'
 
     Label:
       width: self.parent.width
       text: "Plaats auto in machine"
       font_size: heading_font_size
-      color: app.textColor
+      color: C(app.textColor)
 
     BorderedButton:
       text: "Waspas opwaarderen"
@@ -347,22 +383,26 @@
 
 <Error>:
   BaseLayout:
+    Label:
+      text: ""
+      font_size: heading_font_size
+      color: C(error_color)
     Image:
-      source: 'error.png'
+      source: 'images/error.png'
       size: self.texture_size
     Label:
       text: "Storing"
       font_size: heading_font_size
-      color: error_color
+      color: C(error_color)
     Label:
       text: "Er is een storing opgetreden"
       font_size: default_font_size
-      color: error_color
+      color: C(error_color)
     Label:
       text: "Neem contact op met:"
       font_size: default_font_size
-      color: error_color
+      color: C(error_color)
     Label:
       text: app.supportPhone
       font_size: heading_font_size
-      color: error_color
+      color: C(error_color)

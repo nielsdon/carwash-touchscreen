@@ -1,71 +1,81 @@
-"""SDK for washcards
-API is located at api.washterminalpro.nl"""
-import configparser
-import json
 import logging
-import requests
+import threading
+import select
 import subprocess
 import evdev
-import select  # Import the select module
-import threading
+import os
 from munch import munchify
-from googleAnalytics import GoogleAnalytics
+from auth_client import AuthClient  # Import AuthClient from the auth module
+from dotenv import load_dotenv
 
-CONFIG = configparser.ConfigParser()
-CONFIG.read('config.ini')
-API_URL = 'https://api.washterminalpro.nl'
-if CONFIG.get('General','testMode') == 'True':
-    API_PATH = '/dev'
-else:
-    API_PATH = '/v1'
+# Load environment variables from .env file
+load_dotenv()
 
-class Washcard():
-    cardInfoUrl = API_URL +API_PATH +'/card/%s'
-    cardBalanceUrl = API_URL +API_PATH +'/card/%s/balance'
-    cardTransactionUrl = API_URL +API_PATH +'/transaction/start'
-    SETTINGS = {}
-    id = 0
-    uid = ''
-    balance = 0
-    company = ''
-    carwash = ''
-    credit = 0
-    device = ''
+# Configuration setup
+API_URL = f"https://api.washterminalpro.nl{'/dev' if os.getenv('TEST_MODE') == '1' else '/v1'}"
+TOKEN_URL_SUBDOMAIN_SUFFIX = '-dev' if os.getenv('TEST_MODE') == '1' else '/'
+TOKEN_URL = 'https://auth' + TOKEN_URL_SUBDOMAIN_SUFFIX + '.washterminalpro.nl/token'
+
+
+class Washcard:
+    """Class to handle everything related to the wash cards."""
+    cardInfoUrl = API_URL + '/card/%s'
+    cardBalanceUrl = API_URL + '/card/%s/balance'
+    cardTransactionUrl = API_URL + '/transaction/start'
 
     def __init__(self, settings):
-        self.SETTINGS = settings
-        logging.basicConfig(encoding='utf-8', level=int(self.SETTINGS["general"]["logLevel"]))
-        self.headers = {
-            "accept": "application/json",
-            "content-type": "application/json",
-            "Authorization": f'Bearer {self.SETTINGS["general"]["jwtToken"]}'
-        }
-        self.ga = GoogleAnalytics()
-        self.stop_event = threading.Event()  # Create an event object
-        self.device = self.find_event_device(self.SETTINGS["general"]["nfcReaderVendorIdDeviceId"])
+        self.settings = settings
+        self.uid = None
+        self.credit = 0
+        self.balance = 0
+        self.id = None
+        self.carwash = None
+        self.company = None
+        logging.basicConfig(encoding='utf-8', level=int(self.settings["general"]["logLevel"]))
+
+        # Initialize AuthClient for handling authorization and token refreshing
+        API_TOKEN = str(os.getenv('CLIENT_ID'))
+        API_SECRET = str(os.getenv('CLIENT_SECRET'))
+        self.auth_client = AuthClient(API_TOKEN, API_SECRET, TOKEN_URL)
+
+        self.stop_event = threading.Event()  # Event object for stopping NFC read loop
+        self.device = self.find_event_device(self.settings["general"]["nfcReaderVendorIdDeviceId"])
         if not self.device:
             logging.error("NFC Reader not found")
 
     def find_event_device(self, vendor_product_id):
+        """Use bash script to find the connected NFC reader."""
         logging.debug("Finding device %s", vendor_product_id)
         try:
             # Run the shell script with the vendor:product ID as argument
-            result = subprocess.run(['./get_hid_device.sh', vendor_product_id], capture_output=True, text=True, check=True)
-            # Capture the output
-            event_device = result.stdout.strip()
-            logging.debug("NFC Device found: %s", event_device)
-            return event_device
+            result = subprocess.run(['bash', '-c', f'./get_hid_device.sh {vendor_product_id}'],
+                                    capture_output=True, text=True, check=True)
+            eventDevice = result.stdout.strip()
+            logging.debug("NFC Device found: %s", eventDevice)
+            return eventDevice
         except subprocess.CalledProcessError as e:
-            logging.error(f"Error finding event device: {e.stderr.strip()}")
+            logging.error("Error finding event device: %s", e.stderr.strip())
             return None
 
-    def loadInfo(self):
-        info = self.getInfo()
-        if info == {}:
+    def load_info(self):
+        """Store the retrieved card info in the class."""
+        info = self.get_info()
+
+        # Ensure `info` is valid and contains necessary data
+        if not info or not isinstance(info, dict) or 'error' in info:
+            logging.error("Card info could not be loaded: %s", info.get("error", "Unknown error") if isinstance(info, dict) else "Invalid data structure")
             return False
+
+        # Convert to Munch (if needed) and log the data
         info = munchify(info)
-        logging.debug('=====INFO: =====')
-        logging.debug(info)
+        logging.debug("Card info processed successfully: %s", info)
+
+        # Ensure critical fields are present
+        if not info.carwash_id or not info.company_id:
+            logging.error("Critical card data missing: %s", info)
+            return False
+
+        # Populate object attributes
         self.carwash = munchify({
             'id': info.carwash_id,
             'name': info.carwash_name,
@@ -86,102 +96,103 @@ class Washcard():
         self.id = info.id
         self.credit = info.credit
 
-    def getInfo(self):
+        return True
+
+    def get_info(self):
+        """Retrieve card info from API."""
         logging.debug('cardinfo(): getting info for card %s', self.uid)
-        if self.uid == '':
-            return {}
+        if not self.uid:
+            return {"error": "No UID provided"}
+
         url = self.cardInfoUrl % self.uid
         logging.debug('url: %s', url)
-        data = {}
+
         try:
-            response = requests.get(url, headers=self.headers)
-            data = json.loads(response.text)
-        except requests.exceptions.RequestException as e:
-            logging.error('GENERIC EXCEPTION:\n%s', str(e))
-            return {}
-        finally:
-            logging.debug('Getting card info done')
-        return data
+            status_code, response = self.auth_client.make_authenticated_request(url)
+            # Check for a 404 status code to indicate the card was not found
+            if status_code == 404:
+                logging.warning('Card not found for UID %s', self.uid)
+                return {"error": "Card not found", "status_code": 404}
+            return response
+        except Exception as e:
+            print(f"Unexpected Error: {e}")
 
     def pay(self, order):
+        """Initialize payment for the selected program."""
         logging.debug('Paying order %s', order.description)
-        response = self.startTransaction(order.amount*-1, order.description, order.transaction_type)
-        return response
+        return self.start_transaction(order.amount * -1, order.description, order.transaction_type)
 
     def upgrade(self, amount):
+        """Initialize top-up for the washcard."""
         logging.debug('Upgrading card %s with € %s', self.uid, str(amount))
-        response = self.startTransaction(amount, 'Card top-up', 'TOPUP_' +str(amount))
-        return response
+        return self.start_transaction(amount, 'Card top-up', 'TOPUP_' + str(amount))
 
-    def startTransaction(self, amount=0, description='', transaction_type=''):
+    def start_transaction(self, amount=0, description='', transaction_type=''):
+        """Start creating the transaction for the selected program or top-up."""
         logging.debug('Starting transaction')
 
         url = self.cardTransactionUrl
         data = {
-            "carwash_id": self.SETTINGS["general"]["carwashId"],
             "card_id": self.id,
             "amount": amount,
             "description": description,
             "transaction_type": transaction_type
         }
         logging.debug(data)
-        try:
-            response = requests.post(url, headers=self.headers, json=data)
-            data = json.loads(response.text)
-            return data
-        except requests.exceptions.RequestException as e:
-            logging.error('GENERIC EXCEPTION:\n%s', str(e))
-            return 3  # request error
-        finally:
-            logging.debug('Creating transaction done')
 
-    def stopReading(self):
-        # Set the stop event to interrupt the loop
+        try:
+            status_code, response = self.auth_client.make_authenticated_request(url, "POST", data)
+            return {"status_code": status_code, **response}
+
+        except Exception as e:
+            logging.error(f"Washcard payment Error: {e}")
+            # Handle insufficient funds error specifically
+            if status_code == 462:
+                logging.error("Transaction failed: Insufficient funds")
+                return {"error": "Insufficient funds", "status_code": status_code}
+            return {"error": "Unexpected error", "details": str(e)}
+
+    def stop_reading(self):
+        """Stop the NFC reading loop."""
         self.stop_event.set()
 
-    def readCard(self, callback):            
+    def read_card(self, callback):
+        """Use the NFC reader device to read input."""
         logging.debug("Waiting for NFC UID...")
-        if self.device is None:
+        if not self.device:
             raise ValueError("Device path is not set. Please provide a valid device path.")
-        
-        # Create an instance of the InputDevice class
-        print(f"Using device: {self.device}")
+
         device = evdev.InputDevice(self.device)
-        
-        # Create a dictionary to map key codes to characters
-        key_map = {
-            2: '1', 3: '2', 4: '3', 5: '4', 6: '5',
-            7: '6', 8: '7', 9: '8', 10: '9', 11: '0'
-        }
-        
-        # Create an empty string to store the NFC UID
-        nfc_uid = ""
-        
-        # Set device to non-blocking mode
+        keyMap = {2: '1', 3: '2', 4: '3', 5: '4', 6: '5', 7: '6', 8: '7', 9: '8', 10: '9', 11: '0'}
+        nfcUid = ""
         device.grab()
 
         try:
             while not self.stop_event.is_set():
-                r, w, x = select.select([device], [], [], 1)  # 1-second timeout
+                r, _, _ = select.select([device], [], [], 1)
                 if device in r:
                     for event in device.read():
-                        if event.type == evdev.ecodes.EV_KEY:
-                            if event.value == 1:
-                                key_code = event.code
-                                if key_code in key_map:
-                                    nfc_uid += key_map[key_code]
-                                if key_code == evdev.ecodes.KEY_ENTER:
-                                    logging.debug('NFC Card found: %s', nfc_uid)
-                                    self.uid = nfc_uid
-                                    self.loadInfo()
+                        if event.type == evdev.ecodes.EV_KEY and event.value == 1:
+                            keyCode = event.code
+                            if keyCode in keyMap:
+                                nfcUid += keyMap[keyCode]
+                            if keyCode == evdev.ecodes.KEY_ENTER:
+                                logging.debug('NFC Card found: %s', nfcUid)
+                                self.uid = nfcUid
+                                # Attempt to load card information
+                                if not self.load_info():
+                                    logging.error("Failed to process card. Card UID: %s", self.uid)
+                                try:
                                     callback()
-                                    return
+                                except Exception as e:
+                                    logging.error("Error in callback execution: %s", e)
+                                return
+        except (IOError, OSError) as e:
+            logging.error("I/O error in NFC read loop: %s", e)
+        except KeyboardInterrupt:
+            logging.info("NFC read loop interrupted by user.")
         except Exception as e:
-            logging.error("Error in NFC read loop: %s", e)
+            logging.error("Unexpected error in NFC read loop: %s", e)
         finally:
             device.ungrab()
-            logging.debug("Card UID: %s", self.uid)
             logging.debug("Exiting NFC reader loop.")
-
-            
-            

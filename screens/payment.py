@@ -1,62 +1,93 @@
 import logging
-import time
-import threading
 from kivy.clock import Clock
 from kivy.uix.screenmanager import Screen
 from kivy.app import App
 from payNL import PayNL
 from washcard import Washcard
 
+
 class Payment(Screen):
-    transaction_status = ''
-    pay = False
+    transaction_status = ""
+    pay = None
     transaction_id = 0
-    cancel_transaction = threading.Event()
     settings = {}
-    
+
     def on_enter(self, *args, **kwargs):
         logging.debug("=== Payment ===")
         app = App.get_running_app()
         self.settings = app.SETTINGS
-        # pay.nl communicatie: start transaction
+
+        # Initialize PayNL and start transaction
         self.pay = PayNL(self.settings["paynl"])
         self.transaction_id = self.pay.payOrder(app.activeOrder)
+        app.activeOrder.transaction_id = self.transaction_id
         logging.debug("transaction_id: %s", self.transaction_id)
 
-        # start pending requesting the transaction status with pay.nl
-        self.transaction_status = 'PENDING'
-        self.cancel_transaction.clear()  # Clear the stop event
-        t = threading.Thread(target=self.loop)
-        t.start()
+        # Start polling for transaction status
+        self.transaction_status = "PENDING"
+        self.elapsed_time = 0  # Track elapsed time
+        self.cancel_transaction = False
 
-    def loop(self):
-        wait = 0
+        # Track transaction id in tracker
+        app.tracker.set_page(
+            app.sm.current,
+            transaction_id=self.transaction_id,
+            transaction_status=self.transaction_status,
+        )
+
+        # Schedule transaction polling every 0.1 seconds
+        Clock.schedule_interval(self.poll_transaction_status, 2)
+
+    def poll_transaction_status(self, dt):
         app = App.get_running_app()
-        while self.transaction_status == 'PENDING' and wait < 400 and self.transaction_id and not self.cancel_transaction.is_set():
-            time.sleep(0.1)
-            wait += 1
-            if wait % 20 == 0:
-                # pay.nl communicatie: check order status every 2 sec (20 * 0.1)
-                self.transaction_status = self.pay.get_transaction_status(self.transaction_id)
-                logging.debug("transaction_status: %s", self.transaction_status)
-        # timeout is reached, status is no longer PENDING or payment is cancelled
-        if self.transaction_status == 'PAID':
-            logging.debug('betaling gelukt!')
-            # log the transaction
+        self.elapsed_time += dt  # Increment elapsed time by 2 seconds
+
+        self.transaction_status = self.pay.get_transaction_status(self.transaction_id)
+
+        # Update tracker
+        app.tracker.set_page(
+            app.sm.current,
+            transaction_id=self.transaction_id,
+            transaction_status=self.transaction_status,
+        )
+        logging.debug("transaction_status: %s", self.transaction_status)
+
+        # Stop polling if the transaction is complete, cancelled, or timed out
+        if (
+            self.transaction_status != "PENDING"
+            or self.elapsed_time >= 40  # 40 seconds timeout
+            or self.cancel_transaction
+        ):
+            Clock.unschedule(self.poll_transaction_status)
+            self.handle_transaction_result()
+
+    def handle_transaction_result(self):
+        app = App.get_running_app()
+
+        if self.transaction_status == "PAID":
+            logging.debug("Payment successful!")
             washcard = Washcard(self.settings)
             response = washcard.pay(app.activeOrder)
             logging.debug(response)
-            app.changeScreen('payment_success')
-        elif self.cancel_transaction.is_set():
-            logging.debug('transaction cancelled')
-            self.cancel_transaction.clear()
+            app.change_screen("payment_success")
+        elif self.cancel_transaction:
+            logging.debug("Transaction cancelled")
+            app.tracker.set_page(
+                app.sm.current,
+                transaction_id=self.transaction_id,
+                transaction_status="CANCELLED",
+            )
             self.pay.cancel_transaction()
             app.show_start_screen()
         else:
-            logging.debug('some payment error')
-            #self.pay.cancelTransaction(self.transaction_id)
-            Clock.schedule_once(lambda dt: app.changeScreen('payment_failed'))
+            logging.debug("Payment error occurred")
+            app.tracker.set_page(
+                app.sm.current,
+                transaction_id=self.transaction_id,
+                transaction_status="ERROR",
+            )
+            Clock.schedule_once(lambda dt: app.change_screen("payment_failed"))
 
     def cancel(self, *args, **kwargs):
         logging.debug("=== Cancelling PIN payment ===")
-        self.cancel_transaction.set()  # Set the stop event to true
+        self.cancel_transaction = True

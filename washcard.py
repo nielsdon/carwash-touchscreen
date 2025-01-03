@@ -13,8 +13,10 @@ load_dotenv()
 
 # Configuration setup
 API_URL = f"https://api.washterminalpro.nl{'/dev' if os.getenv('TEST_MODE') == '1' else '/v1'}"
-TOKEN_URL_SUBDOMAIN_SUFFIX = '-dev' if os.getenv('TEST_MODE') == '1' else '/'
-TOKEN_URL = 'https://auth' + TOKEN_URL_SUBDOMAIN_SUFFIX + '.washterminalpro.nl/token'
+TOKEN_URL_SUBDOMAIN_SUFFIX = '-dev' if os.getenv('TEST_MODE') == '1' else ''
+TOKEN_URL = f"https://auth{TOKEN_URL_SUBDOMAIN_SUFFIX}.washterminalpro.nl/token"
+print("API_URL:", API_URL)
+print("TOKEN_URL:", TOKEN_URL)
 
 
 class Washcard:
@@ -146,6 +148,10 @@ class Washcard:
 
         except Exception as e:
             logging.error(f"Washcard payment Error: {e}")
+
+            # Ensure `status_code` has a default value
+            status_code = getattr(e, 'status_code', None)
+
             # Handle insufficient funds error specifically
             if status_code == 462:
                 logging.error("Transaction failed: Insufficient funds")

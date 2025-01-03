@@ -197,8 +197,6 @@ class Carwash(App):
         except Exception as e:
             print(f"Unexpected Error: {e}")
             return
-        print(API_URL)
-        print(data)
         self.carwash_id = data["id"]
         self.carwash_name = data["name"]
         self.SETTINGS = data["settings"]
